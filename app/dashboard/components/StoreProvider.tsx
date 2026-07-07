@@ -87,16 +87,5 @@ export default function StoreProvider({ children }: Props) {
     };
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex h-screen w-screen bg-[#030303] items-center justify-center">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-[#EF5A6F] border-t-transparent animate-spin" />
-          <span className="text-[11px] font-bold text-neutral-400 tracking-wider uppercase">Loading Workspace…</span>
-        </div>
-      </div>
-    );
-  }
-
   return <>{children}</>;
 }

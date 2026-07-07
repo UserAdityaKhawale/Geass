@@ -1,3 +1,6 @@
+"use client";
+
+import { useGeassStore } from "@/store/useGeassStore";
 import GreetingHeader    from "./components/GreetingHeader";
 import StatsRow          from "./components/StatsRow";
 import MomentumStreak    from "./components/MomentumStreak";
@@ -12,16 +15,58 @@ import ActivityFeed      from "./components/ActivityFeed";
 import AnalyticsSnapshot from "./components/AnalyticsSnapshot";
 
 export default function DashboardPage() {
+  const { isHydrated } = useGeassStore();
+
+  if (!isHydrated) {
+    return (
+      <div className="p-4 space-y-3 min-h-full">
+        {/* Row 1 Skeleton */}
+        <div className="flex gap-3">
+          <div className="flex-1 min-w-0 space-y-3">
+            {/* Greeting */}
+            <div className="h-10 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
+            {/* Stats row */}
+            <div className="grid grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} className="h-16 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
+              ))}
+            </div>
+          </div>
+          {/* Streak */}
+          <div className="w-[300px] shrink-0 h-[120px] bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
+        </div>
+
+        {/* Row 2 Skeleton */}
+        <div className="grid grid-cols-3 gap-3 h-[320px]">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="h-full bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
+          ))}
+        </div>
+
+        {/* Row 3 Skeleton */}
+        <div className="grid grid-cols-4 gap-3">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="h-32 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
+          ))}
+        </div>
+
+        {/* Row 4 Skeleton */}
+        <div className="grid grid-cols-12 gap-3">
+          <div className="col-span-5 h-44 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
+          <div className="col-span-7 h-44 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-4 space-y-3 min-h-full">
-
       {/* ── Row 1: Greeting + Stats (left 67%) | Streak (right 33%) ── */}
       <div className="flex gap-3">
         <div className="flex-1 min-w-0 space-y-3">
           <GreetingHeader />
           <StatsRow />
         </div>
-        {/* Streak spans both sub-rows */}
         <div className="w-[300px] shrink-0">
           <MomentumStreak />
         </div>
@@ -51,7 +96,6 @@ export default function DashboardPage() {
           <AnalyticsSnapshot />
         </div>
       </div>
-
     </div>
   );
 }
