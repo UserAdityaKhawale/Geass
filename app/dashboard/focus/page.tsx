@@ -172,7 +172,7 @@ export default function FocusPage() {
               strokeDasharray={circ}
               strokeDashoffset={strokeDashoffset}
               transform="rotate(-90 120 120)"
-              style={{ transition: "stroke-dashoffset 0.8s linear" }}
+              style={{ transition: running ? "stroke-dashoffset 1s linear" : "none" }}
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center select-none">

@@ -108,7 +108,7 @@ export default function KanbanBoard({ projectId }: Props) {
 
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <div className="flex gap-4 h-full overflow-x-auto pb-2 px-6 pt-4 min-w-0">
+      <div className="flex flex-nowrap gap-4 h-full overflow-x-auto pb-2 px-6 pt-4 min-w-0 select-none scrollbar-thin scrollbar-thumb-white/[0.08]">
         {COLUMNS.map((col) => {
           const colTasks = filteredTasks
             .filter((t) => t.status === col.id)
@@ -117,7 +117,7 @@ export default function KanbanBoard({ projectId }: Props) {
           return (
             <div
               key={col.id}
-              className="flex flex-col shrink-0 w-[240px] rounded-2xl border border-white/[0.06] bg-[#0e0e10]"
+              className="flex flex-col shrink-0 w-[280px] md:w-[310px] rounded-2xl border border-white/[0.06] bg-[#0e0e10]"
             >
               {/* Column header */}
               <div className="flex items-center justify-between px-4 py-3 shrink-0">

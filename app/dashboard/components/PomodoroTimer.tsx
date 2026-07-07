@@ -83,7 +83,7 @@ export default function PomodoroTimer() {
             strokeDasharray={circ}
             strokeDashoffset={dash}
             transform="rotate(-90 60 60)"
-            style={{ transition: "stroke-dashoffset 0.8s linear", filter: `drop-shadow(0 0 8px ${sess.color}80)` }}
+            style={{ transition: running ? "stroke-dashoffset 1s linear" : "none", filter: `drop-shadow(0 0 8px ${sess.color}80)` }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">

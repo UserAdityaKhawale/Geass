@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, Save, ShieldCheck, Key, RefreshCw, User, Settings, Sliders, BellRing, Clock } from "lucide-react";
+import { Sparkles, Save, ShieldCheck, Key, RefreshCw, User, Settings, Sliders, BellRing, Clock, Award, Shield } from "lucide-react";
+import { useGeassStore } from "@/store/useGeassStore";
 
 export default function SettingsPage() {
   const [activeTab, setActiveTab] = useState<"general" | "ai">("general");
@@ -22,7 +23,40 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  // Load initial settings from localStorage on mount
+  const { focusSessions, activeWorkspaceId } = useGeassStore();
+  const workspaceSessions = focusSessions.filter(s => s.workspaceId === activeWorkspaceId);
+  const totalFocusMinutes = workspaceSessions.reduce((acc, curr) => acc + curr.duration, 0);
+  const focusHrs = Math.floor(totalFocusMinutes / 60);
+
+  // Streak calculations
+  const countsByDate: Record<string, number> = {};
+  workspaceSessions.forEach(sess => {
+    try {
+      const dateStr = sess.completedAt.split("T")[0];
+      countsByDate[dateStr] = (countsByDate[dateStr] || 0) + 1;
+    } catch {}
+  });
+
+  const today = new Date();
+  let streak = 0;
+  let checkDate = new Date(today);
+  const todayStr = checkDate.toISOString().split("T")[0];
+  const hasToday = (countsByDate[todayStr] || 0) > 0;
+
+  if (!hasToday) {
+    checkDate.setDate(checkDate.getDate() - 1);
+  }
+
+  while (true) {
+    const checkStr = checkDate.toISOString().split("T")[0];
+    if ((countsByDate[checkStr] || 0) > 0) {
+      streak += 1;
+      checkDate.setDate(checkDate.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  if (hasToday && streak === 0) streak = 1;
   useEffect(() => {
     if (typeof window !== "undefined") {
       setProvider(localStorage.getItem("geass_ai_provider") || "gemini");
@@ -168,6 +202,24 @@ export default function SettingsPage() {
                   placeholder="https://example.com/photo.jpg"
                   className="w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-3 py-2 text-[11px] text-white focus:outline-none placeholder:text-neutral-800"
                 />
+              </div>
+            </div>
+
+            {/* Metadata metrics */}
+            <div className="grid grid-cols-2 gap-4 border-t border-white/[0.04] pt-4">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.01] border border-white/[0.04]">
+                <Clock size={16} className="text-[#7C3AED]" />
+                <div>
+                  <p className="text-[9px] text-neutral-600 font-mono uppercase tracking-widest leading-none">Focus Time</p>
+                  <p className="text-[13px] font-black text-white mt-1">{focusHrs} hrs</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.01] border border-white/[0.04]">
+                <Award size={16} className="text-[#EF5A6F]" />
+                <div>
+                  <p className="text-[9px] text-neutral-600 font-mono uppercase tracking-widest leading-none">Focus Streak</p>
+                  <p className="text-[13px] font-black text-white mt-1">{streak} days</p>
+                </div>
               </div>
             </div>
           </div>

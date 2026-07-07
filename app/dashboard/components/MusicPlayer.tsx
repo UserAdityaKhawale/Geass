@@ -8,17 +8,14 @@ type Tab  = typeof TABS[number];
 
 const TRACKS: Record<Tab, { title: string; sub: string; color: string; url: string }[]> = {
   Music: [
-    { title: "Lofi Focus Beats",  sub: "Synth Focus Loop", color: "#7C3AED", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-    { title: "Deep Concentration", sub: "Piano Ambient",    color: "#3b82f6", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3" },
-    { title: "Chillwave Study",   sub: "Synths & Pads",    color: "#06b6d4", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3" },
+    { title: "Lofi Focus Track 01",  sub: "Local Synth Focus", color: "#7C3AED", url: "/audio/lofi-track-01.mp3" },
+    { title: "Lofi Focus Track 02",  sub: "Piano Ambient",    color: "#3b82f6", url: "/audio/lofi-track-02.mp3" },
   ],
   "White Noise": [
-    { title: "Steady Brown Noise", sub: "Constant Hiss",    color: "#92400e", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
-    { title: "Calm Pink Noise",    sub: "Flicker Focus",    color: "#ec4899", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-5.mp3" },
+    { title: "Steady Brown Noise", sub: "Constant Hiss",    color: "#92400e", url: "/audio/brown-noise.mp3" },
   ],
   Ambient: [
-    { title: "Rainy Day Loop",     sub: "Raindrops",        color: "#22c55e", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
-    { title: "Cozy Fireplace",     sub: "Crackling Wood",   color: "#c2410c", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-7.mp3" },
+    { title: "Rainy Day Ambient",     sub: "Soft Raindrops",        color: "#22c55e", url: "/audio/rain-ambient.mp3" },
   ],
 };
 
@@ -38,13 +35,42 @@ export default function MusicPlayer() {
     }
   }, [volume]);
 
+  const fadeRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   useEffect(() => {
-    if (audioRef.current) {
-      audioRef.current.src = track.url;
-      if (playing) {
-        audioRef.current.play().catch(e => console.log("Play interrupted:", e));
-      }
+    const audio = audioRef.current;
+    if (!audio) return;
+
+    if (playing) {
+      let currentVol = volume;
+      if (fadeRef.current) clearInterval(fadeRef.current);
+
+      fadeRef.current = setInterval(() => {
+        currentVol = Math.max(0, currentVol - 0.1);
+        audio.volume = currentVol;
+
+        if (currentVol <= 0) {
+          if (fadeRef.current) clearInterval(fadeRef.current);
+          audio.src = track.url;
+          audio.play().then(() => {
+            fadeRef.current = setInterval(() => {
+              currentVol = Math.min(volume, currentVol + 0.1);
+              audio.volume = currentVol;
+              if (currentVol >= volume) {
+                if (fadeRef.current) clearInterval(fadeRef.current);
+              }
+            }, 30);
+          }).catch(e => console.log("Fade play error:", e));
+        }
+      }, 30);
+    } else {
+      audio.src = track.url;
+      audio.volume = volume;
     }
+
+    return () => {
+      if (fadeRef.current) clearInterval(fadeRef.current);
+    };
   }, [cur, tab]);
 
   const togglePlay = () => {

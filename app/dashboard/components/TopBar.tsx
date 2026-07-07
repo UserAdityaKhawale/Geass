@@ -7,6 +7,7 @@ import { useGeassStore } from "@/store/useGeassStore";
 import { Search, Bell, ChevronDown, ChevronRight } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 import { UserButton } from "@clerk/nextjs";
+import NotificationDropdown from "./NotificationDropdown";
 
 const BREADCRUMBS: Record<string, { label: string; parent?: { label: string; href: string } }> = {
   "/dashboard":          { label: "Dashboard" },
@@ -22,6 +23,7 @@ const BREADCRUMBS: Record<string, { label: string; parent?: { label: string; hre
 
 export default function TopBar() {
   const [query, setQuery] = useState("");
+  const [showNotifications, setShowNotifications] = useState(false);
   const pathname = usePathname();
   const { workspaces, activeWorkspaceId, setActiveWorkspace } = useGeassStore();
 
@@ -94,10 +96,23 @@ export default function TopBar() {
         <ThemeToggle />
 
         {/* Notifications */}
-        <button className="relative flex items-center justify-center h-8 w-8 rounded-xl border border-white/[0.06] bg-white/[0.03] text-neutral-500 hover:text-white hover:bg-white/[0.08] transition-all">
-          <Bell size={14} />
-          <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#EF5A6F] ring-1 ring-[#030303]" />
-        </button>
+        <div className="relative">
+          <button
+            onClick={() => setShowNotifications(o => !o)}
+            className={`relative flex items-center justify-center h-8 w-8 rounded-xl border transition-all ${
+              showNotifications
+                ? "bg-[#EF5A6F]/10 border-[#EF5A6F]/30 text-[#EF5A6F]"
+                : "border-white/[0.06] bg-white/[0.03] text-neutral-500 hover:text-white hover:bg-white/[0.08]"
+            }`}
+          >
+            <Bell size={14} />
+            <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#EF5A6F] ring-1 ring-[#030303]" />
+          </button>
+
+          {showNotifications && (
+            <NotificationDropdown onClose={() => setShowNotifications(false)} />
+          )}
+        </div>
 
         {/* Profile UserButton */}
         <div className="flex items-center pl-1 shrink-0">

@@ -16,7 +16,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
           <TopBar />
           <main className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-white/10 scrollbar-track-transparent">
-            {children}
+            <div className="max-w-[1600px] w-full mx-auto h-full flex flex-col min-h-0">
+              {children}
+            </div>
           </main>
         </div>
       </div>
