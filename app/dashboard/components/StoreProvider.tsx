@@ -49,6 +49,7 @@ export default function StoreProvider({ children }: Props) {
       } catch (err) {
         console.error("Hydration failed, using offline cache:", err);
         store.setSyncStatus("offline");
+        store.setHydrated(true);
       } finally {
         setLoading(false);
       }
