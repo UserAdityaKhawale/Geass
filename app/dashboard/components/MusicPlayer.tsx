@@ -8,14 +8,22 @@ type Tab  = typeof TABS[number];
 
 const TRACKS: Record<Tab, { title: string; sub: string; color: string; url: string }[]> = {
   Music: [
-    { title: "Lofi Focus Track 01",  sub: "Local Synth Focus", color: "#7C3AED", url: "/audio/lofi-track-01.mp3" },
-    { title: "Lofi Focus Track 02",  sub: "Piano Ambient",    color: "#3b82f6", url: "/audio/lofi-track-02.mp3" },
+    { title: "Chill Lofi Hip Hop", sub: "Vibehorn Beats", color: "#7C3AED", url: "/Music%20For%20geass/vibehorn-chill-lofi-hip-hop-482143.mp3" },
+    { title: "Romantic Jazzy Love", sub: "Jazzy Lofi Loop", color: "#3b82f6", url: "/Music%20For%20geass/vibehorn-lo-fi-music-romantic-jazzy-love-479215.mp3" },
+    { title: "Dark Suspense Trip Hop", sub: "Trip Hop Focus", color: "#06b6d4", url: "/Music%20For%20geass/databend-dark-suspense-trip-hop-background-30-seconds-edit-500757.mp3" },
   ],
   "White Noise": [
-    { title: "Steady Brown Noise", sub: "Constant Hiss",    color: "#92400e", url: "/audio/brown-noise.mp3" },
+    { title: "Mechanical Keyboard ASMR", sub: "Dragon Studio ASMR", color: "#92400e", url: "/Music%20For%20geass/dragon-studio-typing-keyboard-asmr-356116.mp3" },
+    { title: "Keyboard Typing SFX", sub: "Sound Reality Type", color: "#ec4899", url: "/Music%20For%20geass/soundreality-keyboard-typing-sfx-525007.mp3" },
+    { title: "Quiet Library Ambience", sub: "Dreamy Soul Ambient", color: "#8b5cf6", url: "/Music%20For%20geass/u_dreamysoul-library-ambience-542977.mp3" },
+    { title: "Grand Library Hall", sub: "Community Library Loop", color: "#f59e0b", url: "/Music%20For%20geass/freesound_community-library-ambiance-60000.mp3" },
   ],
   Ambient: [
-    { title: "Rainy Day Ambient",     sub: "Soft Raindrops",        color: "#22c55e", url: "/audio/rain-ambient.mp3" },
+    { title: "Calming Rain Storm", sub: "Liecio Rain Ambience", color: "#22c55e", url: "/Music%20For%20geass/liecio-calming-rain-257596.mp3" },
+    { title: "Steady Rain Showers", sub: "Sound Reality Rain", color: "#06b6d4", url: "/Music%20For%20geass/soundreality-rain-sound-550289.mp3" },
+    { title: "Raindrop Dreams", sub: "Raindrop Focus Beats", color: "#a855f7", url: "/Music%20For%20geass/ahyoungssi-raindrop-dreams-226868.mp3" },
+    { title: "Tropical Jungle Birds", sub: "Placidplace Nature", color: "#10b981", url: "/Music%20For%20geass/placidplace-nature-soundstropicaljunglebirds-108380.mp3" },
+    { title: "Jungle Nature Streams", sub: "Soul Serenity Streams", color: "#3b82f6", url: "/Music%20For%20geass/soul_serenity_sounds-jungle-nature-229896.mp3" },
   ],
 };
 

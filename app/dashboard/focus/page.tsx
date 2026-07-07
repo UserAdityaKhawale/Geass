@@ -11,9 +11,9 @@ const SESSIONS = [
 ];
 
 const TRACKS = [
-  { title: "Lofi Focus Loops", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" },
-  { title: "Brown Noise Hiss", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-4.mp3" },
-  { title: "Rain Forest Ambient", url: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-6.mp3" },
+  { title: "Chill Lofi Hip Hop", url: "/Music%20For%20geass/vibehorn-chill-lofi-hip-hop-482143.mp3" },
+  { title: "Keyboard ASMR", url: "/Music%20For%20geass/dragon-studio-typing-keyboard-asmr-356116.mp3" },
+  { title: "Calming Rain", url: "/Music%20For%20geass/liecio-calming-rain-257596.mp3" },
 ];
 
 export default function FocusPage() {
