@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
+import { useGeassStore } from "@/store/useGeassStore";
 import { ChevronRight, ChevronLeft, Sparkles, Send, ListTodo, Zap, Clock, BarChart2 } from "lucide-react";
 
 const QUICK_ACTIONS = [
-  { icon: ListTodo, label: "Generate Task List",   desc: "Break down project into tasks" },
-  { icon: Zap,      label: "Suggest Priorities",   desc: "AI suggests task priorities" },
-  { icon: Clock,    label: "Estimate Timeline",    desc: "Get project time estimation" },
-  { icon: BarChart2,label: "Summarize Progress",  desc: "AI summary of project status" },
+  { label: "Generate Task List",   desc: "AI creates a starter task list" },
+  { label: "Suggest Priorities",   desc: "AI recommends task sorting" },
+  { label: "Estimate Timeline",    desc: "AI estimates hours to complete" },
+  { label: "Summarize Progress",  desc: "AI reports current progress" },
 ];
 
 const QUICK_PROMPTS = [
@@ -17,26 +19,110 @@ const QUICK_PROMPTS = [
   "Suggest improvements",
 ];
 
-const BOT_RESPONSE: Record<string, string> = {
-  "What should I work on next?": "Based on your current sprint, I recommend focusing on **Integrate AI Copilot** (30% complete) since it has a medium priority and is a dependency for several upcoming tasks. After that, tackle **Implement real-time notifications**.",
-  "Show me project risks": "⚠️ **3 risks identified:**\n1. **Timeline** — 8 tasks in 'To Do' with May 30 deadline\n2. **Scope creep** — Backlog has 4 unplanned items\n3. **Testing** — Unit tests not started yet",
-  "Estimate remaining time": "📊 At the current velocity (4 tasks/week), you need approximately **2.5 more weeks** to complete all remaining tasks. Consider breaking down the larger tasks.",
-  "Suggest improvements": "💡 **3 recommendations:**\n1. Move 'Mobile app development' to a separate project\n2. Assign due dates to all backlog items\n3. Enable daily standups to track In Progress tasks",
-};
+interface Props {
+  projectId: string | null;
+}
 
-export default function AICopilotPanel() {
+export default function AICopilotPanel({ projectId }: Props) {
+  const { activeWorkspaceId, projects, tasks, addTask, updateTask } = useGeassStore();
   const [collapsed, setCollapsed] = useState(false);
-  const [messages, setMessages] = useState<{ role: "user" | "bot"; text: string }[]>([
-    { role: "bot", text: "Hello Aditya! 👋\nHow can I help you with **Geass Redesign**?" },
+  const [messages, setMessages] = useState<{ role: "user" | "bot" | "system"; text: string }[]>([
+    { role: "bot", text: "Hello Aditya! 👋\nHow can I help you with your project?" },
   ]);
   const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const sendMessage = (text: string) => {
+  const project = projects.find((p) => p._id === projectId);
+
+  const sendMessage = async (text: string) => {
     if (!text.trim()) return;
-    const userMsg = { role: "user" as const, text };
-    const botText = BOT_RESPONSE[text] ?? "I'm analyzing your project... Let me check the task distribution and timeline for you.";
-    setMessages(m => [...m, userMsg, { role: "bot", text: botText }]);
+
+    // Add user message
+    setMessages((m) => [...m, { role: "user", text }]);
     setInput("");
+    setLoading(true);
+
+    try {
+      // 1. Gather API keys from localStorage
+      const apiKey = localStorage.getItem("geass_ai_api_key");
+      const provider = localStorage.getItem("geass_ai_provider") || "gemini";
+
+      if (!apiKey) {
+        setMessages((m) => [
+          ...m,
+          {
+            role: "system",
+            text: "⚠️ No API Key found. Please configure your key in Settings first.",
+          },
+        ]);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Gather context
+      const projectTasks = tasks.filter((t) => t.projectId === projectId);
+      const context = {
+        projectName: project?.name || "General Workspace",
+        workspaceId: activeWorkspaceId,
+        tasks: projectTasks.map((t) => ({
+          id: t._id,
+          title: t.title,
+          status: t.status,
+          priority: t.priority,
+          tag: t.tag,
+        })),
+      };
+
+      // 3. Request proxy
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: text,
+          context,
+          provider,
+          apiKey,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "LLM communication failed");
+      }
+
+      const json = await res.json();
+
+      // Add assistant response
+      setMessages((m) => [...m, { role: "bot", text: json.response }]);
+
+      // Execute commands
+      if (json.commands && Array.isArray(json.commands)) {
+        for (const cmd of json.commands) {
+          if (cmd.action === "create_task" && activeWorkspaceId) {
+            addTask({
+              _id: `task-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+              workspaceId: activeWorkspaceId,
+              projectId: projectId || undefined,
+              title: cmd.title,
+              priority: cmd.priority || "medium",
+              status: "todo",
+              orderIndex: projectTasks.length,
+              tag: cmd.tag,
+            });
+          } else if (cmd.action === "update_task_status") {
+            updateTask(cmd.taskId, { status: cmd.status });
+          }
+        }
+      }
+    } catch (err: any) {
+      console.error(err);
+      setMessages((m) => [
+        ...m,
+        { role: "system", text: `❌ Error: ${err.message || "Failed to fetch AI response"}` },
+      ]);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (collapsed) {
@@ -62,7 +148,9 @@ export default function AICopilotPanel() {
         <div className="flex items-center gap-2">
           <Sparkles size={13} className="text-[#EF5A6F]" />
           <span className="text-[12px] font-bold text-white">AI Copilot</span>
-          <span className="text-[8px] font-black bg-[#EF5A6F]/20 text-[#EF5A6F] px-1.5 py-0.5 rounded-md tracking-widest uppercase">Beta</span>
+          <span className="text-[8px] font-black bg-[#EF5A6F]/20 text-[#EF5A6F] px-1.5 py-0.5 rounded-md tracking-widest uppercase">
+            Beta
+          </span>
         </div>
         <button
           onClick={() => setCollapsed(true)}
@@ -72,68 +160,73 @@ export default function AICopilotPanel() {
         </button>
       </div>
 
-      {/* Avatar + greeting */}
-      <div className="px-4 py-4 flex flex-col items-center text-center border-b border-white/[0.05] shrink-0">
-        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#EF5A6F]/30 to-[#7C3AED]/30 border border-[#EF5A6F]/20 flex items-center justify-center mb-3">
-          <div className="text-2xl">🤖</div>
+      {/* Greeting info */}
+      {project && (
+        <div className="px-4 py-3 bg-white/[0.01] border-b border-white/[0.04] text-[10px] text-neutral-600 font-medium">
+          Context scoped to: <strong className="text-white">{project.name}</strong>
         </div>
-        {messages.length > 0 && (
-          <div className="text-[11px] text-neutral-300 leading-relaxed whitespace-pre-line">
-            {messages[0].text.split("**").map((part, i) =>
-              i % 2 === 1 ? <strong key={i} className="text-[#EF5A6F]">{part}</strong> : <span key={i}>{part}</span>
-            )}
-          </div>
-        )}
-      </div>
+      )}
 
-      {/* Quick actions */}
+      {/* Quick Actions */}
       <div className="px-4 py-3 border-b border-white/[0.05] shrink-0">
-        <p className="text-[9px] font-mono uppercase tracking-widest text-neutral-700 mb-2">Quick Actions</p>
-        <div className="space-y-1.5">
-          {QUICK_ACTIONS.map(({ icon: Icon, label, desc }) => (
+        <p className="text-[9px] font-mono uppercase tracking-widest text-neutral-700 mb-2">
+          Quick Actions
+        </p>
+        <div className="grid grid-cols-2 gap-1.5">
+          {QUICK_ACTIONS.map(({ label, desc }) => (
             <button
               key={label}
+              disabled={loading}
               onClick={() => sendMessage(label)}
-              className="w-full flex items-center gap-2.5 px-2.5 py-2 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-[#EF5A6F]/[0.06] hover:border-[#EF5A6F]/20 transition-all group text-left"
+              className="flex flex-col gap-1 p-2 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:bg-[#EF5A6F]/[0.06] hover:border-[#EF5A6F]/20 transition-all text-left disabled:opacity-50"
             >
-              <div className="w-6 h-6 rounded-lg bg-[#EF5A6F]/10 flex items-center justify-center shrink-0">
-                <Icon size={11} className="text-[#EF5A6F]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-[10px] font-bold text-neutral-300 group-hover:text-white transition-colors">{label}</p>
-                <p className="text-[9px] text-neutral-700 truncate">{desc}</p>
-              </div>
+              <span className="text-[9px] font-bold text-neutral-300">{label}</span>
+              <span className="text-[7px] text-neutral-700 leading-tight">{desc}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Chat messages */}
+      {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2.5 min-h-0 scrollbar-thin scrollbar-thumb-white/[0.08]">
-        {messages.slice(1).map((msg, i) => (
+        {messages.map((msg, i) => (
           <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
-            <div className={`max-w-[90%] text-[10px] leading-relaxed px-3 py-2 rounded-xl ${
-              msg.role === "user"
-                ? "bg-[#EF5A6F]/15 text-[#EF5A6F] border border-[#EF5A6F]/20"
-                : "bg-white/[0.04] text-neutral-300 border border-white/[0.06]"
-            }`}>
-              {msg.text.split("**").map((part, j) =>
-                j % 2 === 1 ? <strong key={j} className="text-white">{part}</strong> : <span key={j}>{part}</span>
-              )}
+            <div
+              className={`max-w-[90%] text-[10px] leading-relaxed px-3 py-2 rounded-xl ${
+                msg.role === "user"
+                  ? "bg-[#EF5A6F]/15 text-[#EF5A6F] border border-[#EF5A6F]/20"
+                  : msg.role === "system"
+                  ? "bg-amber-500/10 text-amber-500 border border-amber-500/20"
+                  : "bg-white/[0.04] text-neutral-300 border border-white/[0.06]"
+              }`}
+            >
+              {msg.text}
             </div>
           </div>
         ))}
 
-        {/* Ask Anything quick prompts */}
+        {loading && (
+          <div className="flex justify-start">
+            <div className="bg-white/[0.04] px-3 py-2 rounded-xl border border-white/[0.06] flex items-center gap-1.5 text-[9px] text-neutral-500">
+              <div className="w-1.5 h-1.5 rounded-full bg-[#EF5A6F] animate-bounce" style={{ animationDelay: "0ms" }} />
+              <div className="w-1.5 h-1.5 rounded-full bg-[#EF5A6F] animate-bounce" style={{ animationDelay: "150ms" }} />
+              <div className="w-1.5 h-1.5 rounded-full bg-[#EF5A6F] animate-bounce" style={{ animationDelay: "300ms" }} />
+            </div>
+          </div>
+        )}
+
         {messages.length <= 1 && (
           <div>
-            <p className="text-[9px] font-mono uppercase tracking-widest text-neutral-700 mb-2">Ask Anything</p>
+            <p className="text-[9px] font-mono uppercase tracking-widest text-neutral-700 mb-2">
+              Ask Anything
+            </p>
             <div className="space-y-1">
-              {QUICK_PROMPTS.map(p => (
+              {QUICK_PROMPTS.map((p) => (
                 <button
                   key={p}
+                  disabled={loading}
                   onClick={() => sendMessage(p)}
-                  className="w-full text-left text-[10px] text-neutral-500 hover:text-neutral-200 px-2.5 py-1.5 rounded-lg hover:bg-white/[0.04] transition-all"
+                  className="w-full text-left text-[10px] text-neutral-500 hover:text-neutral-200 px-2.5 py-1.5 rounded-lg hover:bg-white/[0.04] transition-all disabled:opacity-50"
                 >
                   {p}
                 </button>
@@ -148,17 +241,27 @@ export default function AICopilotPanel() {
         <div className="flex items-center gap-2 bg-white/[0.03] border border-white/[0.08] rounded-xl px-3 py-2 focus-within:border-[#EF5A6F]/30 transition-colors">
           <input
             value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === "Enter" && sendMessage(input)}
+            disabled={loading}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
             placeholder="Type your message…"
-            className="flex-1 bg-transparent text-[11px] text-neutral-300 placeholder:text-neutral-700 outline-none"
+            className="flex-1 bg-transparent text-[11px] text-neutral-300 placeholder:text-neutral-700 outline-none disabled:opacity-50"
           />
           <button
             onClick={() => sendMessage(input)}
-            className="text-[#EF5A6F]/50 hover:text-[#EF5A6F] transition-colors"
+            disabled={loading}
+            className="text-[#EF5A6F]/50 hover:text-[#EF5A6F] transition-colors disabled:opacity-50"
           >
             <Send size={13} />
           </button>
+        </div>
+        <div className="mt-1.5 text-center">
+          <Link
+            href="/dashboard/settings"
+            className="text-[9px] text-[#EF5A6F]/50 hover:text-[#EF5A6F] transition-colors hover:underline"
+          >
+            Configure API keys & provider
+          </Link>
         </div>
       </div>
     </div>

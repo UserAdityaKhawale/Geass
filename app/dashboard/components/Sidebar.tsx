@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useGeassStore } from "@/store/useGeassStore";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -16,13 +17,6 @@ import {
   Plus,
   HelpCircle,
   MessageSquare,
-  Home,
-  GraduationCap,
-  Briefcase,
-  Rocket,
-  Dumbbell,
-  BookOpen,
-  User,
 } from "lucide-react";
 
 const NAV_ITEMS = [
@@ -37,19 +31,27 @@ const NAV_ITEMS = [
   { icon: Settings,        label: "Settings",  href: "/dashboard/settings" },
 ];
 
-const WORKSPACES = [
-  { icon: Home,          label: "Home",      color: "#EF5A6F" },
-  { icon: GraduationCap, label: "College",   color: "#7C3AED" },
-  { icon: Briefcase,     label: "Freelance", color: "#3b82f6" },
-  { icon: Rocket,        label: "Startup",   color: "#f59e0b" },
-  { icon: Dumbbell,      label: "Fitness",   color: "#22c55e" },
-  { icon: BookOpen,      label: "Learning",  color: "#06b6d4" },
-  { icon: User,          label: "Personal",  color: "#ec4899" },
-];
-
 export default function Sidebar() {
   const pathname = usePathname();
-  const [activeWs, setActiveWs] = useState("College");
+  const { workspaces, activeWorkspaceId, setActiveWorkspace, addWorkspace } = useGeassStore();
+  const [showAddWs, setShowAddWs] = useState(false);
+  const [newWsName, setNewWsName] = useState("");
+  const [newWsIcon, setNewWsIcon] = useState("🚀");
+  const [newWsColor, setNewWsColor] = useState("#EF5A6F");
+
+  const activeWs = workspaces.find(w => w._id === activeWorkspaceId);
+
+  const handleCreateWorkspace = () => {
+    if (!newWsName.trim()) return;
+    addWorkspace({
+      _id: `ws-${Date.now()}`,
+      name: newWsName,
+      icon: newWsIcon,
+      color: newWsColor,
+    });
+    setNewWsName("");
+    setShowAddWs(false);
+  };
 
   return (
     <div className="w-[220px] h-full flex flex-col bg-[#0a0a0c] border-r border-white/[0.05] shrink-0">
@@ -88,30 +90,73 @@ export default function Sidebar() {
             <span className="text-[9px] font-mono uppercase tracking-widest text-neutral-600">
               Workspaces
             </span>
-            <button className="text-neutral-600 hover:text-white transition-colors rounded p-0.5">
+            <button
+              onClick={() => setShowAddWs(o => !o)}
+              className="text-neutral-600 hover:text-white transition-colors rounded p-0.5"
+            >
               <Plus size={11} />
             </button>
           </div>
 
-          {WORKSPACES.map(({ icon: Icon, label, color }) => (
+          {workspaces.map((ws) => (
             <button
-              key={label}
-              onClick={() => setActiveWs(label)}
+              key={ws._id}
+              onClick={() => setActiveWorkspace(ws._id)}
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[12px] font-semibold transition-all duration-150 ${
-                activeWs === label
+                activeWorkspaceId === ws._id
                   ? "bg-white/[0.06] text-white"
                   : "text-neutral-600 hover:text-neutral-300 hover:bg-white/[0.03]"
               }`}
             >
-              <Icon size={13} style={{ color: activeWs === label ? color : undefined }} />
-              {label}
+              <span className="text-sm shrink-0" style={{ color: activeWorkspaceId === ws._id ? ws.color : undefined }}>
+                {ws.icon || "📁"}
+              </span>
+              <span className="truncate">{ws.name}</span>
             </button>
           ))}
 
-          <button className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] text-neutral-700 hover:text-neutral-400 transition-colors mt-1">
-            <Plus size={12} />
-            New Workspace
-          </button>
+          {showAddWs && (
+            <div className="mt-2 p-2 bg-white/[0.02] border border-white/[0.06] rounded-xl space-y-2">
+              <input
+                type="text"
+                value={newWsName}
+                onChange={e => setNewWsName(e.target.value)}
+                placeholder="Workspace name"
+                className="w-full bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-1 text-[11px] text-white focus:outline-none focus:border-[#EF5A6F]/50"
+              />
+              <div className="flex gap-1.5 items-center justify-between">
+                <input
+                  type="text"
+                  value={newWsIcon}
+                  onChange={e => setNewWsIcon(e.target.value)}
+                  placeholder="Icon (emoji)"
+                  className="w-12 bg-white/[0.04] border border-white/[0.08] rounded-lg py-1 text-center text-[11px] text-white focus:outline-none"
+                />
+                <input
+                  type="color"
+                  value={newWsColor}
+                  onChange={e => setNewWsColor(e.target.value)}
+                  className="w-6 h-6 border-0 bg-transparent cursor-pointer rounded overflow-hidden shrink-0"
+                />
+                <button
+                  onClick={handleCreateWorkspace}
+                  className="bg-[#EF5A6F] text-white font-bold text-[10px] px-2.5 py-1 rounded-lg hover:bg-[#d94a5f] transition-all"
+                >
+                  Create
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!showAddWs && (
+            <button
+              onClick={() => setShowAddWs(true)}
+              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] text-neutral-700 hover:text-neutral-400 transition-colors mt-1"
+            >
+              <Plus size={12} />
+              New Workspace
+            </button>
+          )}
         </div>
       </div>
 

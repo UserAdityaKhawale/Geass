@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
+import { useGeassStore } from "@/store/useGeassStore";
 import { Search, Bell, ChevronDown, ChevronRight } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -21,30 +22,56 @@ const BREADCRUMBS: Record<string, { label: string; parent?: { label: string; hre
 export default function TopBar() {
   const [query, setQuery] = useState("");
   const pathname = usePathname();
+  const { workspaces, activeWorkspaceId, setActiveWorkspace } = useGeassStore();
+
   const crumb = BREADCRUMBS[pathname] ?? { label: "Dashboard" };
+  const activeWs = workspaces.find(w => w._id === activeWorkspaceId);
+  const [openSelector, setOpenSelector] = useState(false);
 
   return (
     <div className="h-12 flex items-center gap-4 px-4 border-b border-white/[0.05] bg-[#0a0a0c] shrink-0">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-1.5 shrink-0">
-        {crumb.parent ? (
-          <>
-            <Link href={crumb.parent.href} className="text-[11px] font-semibold text-neutral-600 hover:text-neutral-300 transition-colors">
-              {crumb.parent.label}
-            </Link>
-            <ChevronRight size={11} className="text-neutral-700" />
-            <span className="text-[11px] font-bold text-white">{crumb.label}</span>
-          </>
-        ) : (
-          <>
-            <div className="w-5 h-5 rounded-md bg-[#7C3AED]/20 border border-[#7C3AED]/30 flex items-center justify-center">
-              <span className="text-[9px] text-[#7C3AED] font-black">C</span>
-            </div>
-            <span className="text-[12px] font-semibold text-white">College</span>
-            <ChevronDown size={12} className="text-neutral-600" />
-          </>
+      {/* Workspace selector badge */}
+      <div className="relative flex items-center gap-1.5 shrink-0">
+        <button
+          onClick={() => setOpenSelector(o => !o)}
+          className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+        >
+          <div
+            className="w-5 h-5 rounded-md flex items-center justify-center border"
+            style={{ backgroundColor: activeWs ? `${activeWs.color}15` : undefined, borderColor: activeWs ? `${activeWs.color}30` : undefined }}
+          >
+            <span className="text-[10px]" style={{ color: activeWs?.color }}>{activeWs?.icon || "📁"}</span>
+          </div>
+          <span className="text-[12px] font-bold text-white">{activeWs?.name || "Workspace"}</span>
+          <ChevronDown size={12} className="text-neutral-600" />
+        </button>
+
+        {openSelector && (
+          <div className="absolute top-full left-0 mt-2 w-48 bg-[#111113] border border-white/[0.08] rounded-xl shadow-2xl z-50 overflow-hidden">
+            {workspaces.map(w => (
+              <button
+                key={w._id}
+                onClick={() => { setActiveWorkspace(w._id); setOpenSelector(false); }}
+                className={`w-full flex items-center gap-2.5 px-3 py-2 text-left hover:bg-white/[0.05] transition-colors ${w._id === activeWorkspaceId ? "bg-white/[0.03]" : ""}`}
+              >
+                <span>{w.icon}</span>
+                <span className="text-[11px] font-bold text-white truncate">{w.name}</span>
+              </button>
+            ))}
+          </div>
         )}
       </div>
+
+      {crumb.parent && (
+        <div className="flex items-center gap-1.5 shrink-0">
+          <ChevronRight size={11} className="text-neutral-700" />
+          <Link href={crumb.parent.href} className="text-[11px] font-semibold text-neutral-600 hover:text-neutral-300 transition-colors">
+            {crumb.parent.label}
+          </Link>
+          <ChevronRight size={11} className="text-neutral-700" />
+          <span className="text-[11px] font-bold text-white">{crumb.label}</span>
+        </div>
+      )}
 
       {/* Search */}
       <div className="flex-1 relative max-w-xl">

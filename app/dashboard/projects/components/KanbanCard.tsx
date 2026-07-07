@@ -1,21 +1,26 @@
 "use client";
 
 import { MoreHorizontal, Calendar } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 export interface Task {
-  id: string;
+  _id: string;
+  workspaceId: string;
+  projectId?: string;
   title: string;
-  priority: "High" | "Medium" | "Low";
+  priority: "high" | "medium" | "low";
+  status: "todo" | "in_progress" | "done" | "backlog";
   due?: string;
   assignee?: string;
-  progress?: number; // 0–100, shown for "In Progress"
+  progress?: number;
   tag?: string;
 }
 
 const PRIORITY_COLORS = {
-  High:   "#EF5A6F",
-  Medium: "#f59e0b",
-  Low:    "#22c55e",
+  high:   "#EF5A6F",
+  medium: "#f59e0b",
+  low:    "#22c55e",
 };
 
 const ASSIGNEE_COLORS = ["#7C3AED", "#EF5A6F", "#3b82f6", "#22c55e", "#f59e0b"];
@@ -27,11 +32,25 @@ interface Props {
 }
 
 export default function KanbanCard({ task, index, showProgress }: Props) {
-  const accentColor = PRIORITY_COLORS[task.priority];
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: task._id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+  };
+
+  const accentColor = PRIORITY_COLORS[task.priority] || PRIORITY_COLORS.medium;
 
   return (
     <div
-      className="group bg-[#111113] border border-white/[0.07] rounded-xl p-3 cursor-pointer hover:border-white/[0.14] hover:bg-[#161618] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30"
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
+      className="group bg-[#111113] border border-white/[0.07] rounded-xl p-3 cursor-grab active:cursor-grabbing hover:border-white/[0.14] hover:bg-[#161618] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-black/30 touch-none"
     >
       {/* Top row: tag + menu */}
       <div className="flex items-center justify-between mb-2">
@@ -89,7 +108,7 @@ export default function KanbanCard({ task, index, showProgress }: Props) {
 
           {/* Priority badge */}
           <span
-            className="text-[8px] font-bold px-1.5 py-0.5 rounded-md"
+            className="text-[8px] font-bold px-1.5 py-0.5 rounded-md uppercase"
             style={{ color: accentColor, backgroundColor: `${accentColor}18` }}
           >
             {task.priority}

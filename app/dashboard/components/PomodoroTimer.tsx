@@ -2,14 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Settings } from "lucide-react";
+import { useGeassStore } from "@/store/useGeassStore";
 
 const SESSIONS = [
-  { label: "Focus",       short: "Focus",    mins: 25, color: "#EF5A6F" },
-  { label: "Short Break", short: "Shrt Brk", mins: 5,  color: "#22c55e" },
-  { label: "Long Break",  short: "Long Brk", mins: 15, color: "#3b82f6" },
+  { label: "Focus",       short: "Focus",    mins: 25, color: "#EF5A6F", type: "pomodoro" as const },
+  { label: "Short Break", short: "Shrt Brk", mins: 5,  color: "#22c55e", type: "deep_work" as const }, // just mapping breaks as different focus types or ignore log
+  { label: "Long Break",  short: "Long Brk", mins: 15, color: "#3b82f6", type: "deep_work" as const },
 ];
 
 export default function PomodoroTimer() {
+  const { activeWorkspaceId, addFocusSession } = useGeassStore();
   const [idx, setIdx]         = useState(0);
   const [secs, setSecs]       = useState(SESSIONS[0].mins * 60);
   const [running, setRunning] = useState(false);
@@ -24,6 +26,18 @@ export default function PomodoroTimer() {
           if (s <= 1) {
             setRunning(false);
             setCount(c => c + 1);
+
+            // Log session if it's the "Focus" session type
+            if (sess.label === "Focus" && activeWorkspaceId) {
+              addFocusSession({
+                _id: `focus-${Date.now()}`,
+                workspaceId: activeWorkspaceId,
+                duration: sess.mins,
+                type: "pomodoro",
+                completedAt: new Date().toISOString(),
+              });
+            }
+
             return sess.mins * 60;
           }
           return s - 1;
@@ -33,7 +47,7 @@ export default function PomodoroTimer() {
       if (ref.current) clearInterval(ref.current);
     }
     return () => { if (ref.current) clearInterval(ref.current); };
-  }, [running, sess.mins]);
+  }, [running, sess, activeWorkspaceId, addFocusSession]);
 
   const switchSession = (i: number) => {
     setRunning(false); setIdx(i); setSecs(SESSIONS[i].mins * 60);

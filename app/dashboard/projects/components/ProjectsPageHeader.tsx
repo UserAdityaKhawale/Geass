@@ -1,32 +1,41 @@
 "use client";
 
 import { useState } from "react";
+import { useGeassStore } from "@/store/useGeassStore";
 import {
   ChevronDown, Share2, MoreHorizontal, Star, Calendar, CheckSquare, TrendingUp
 } from "lucide-react";
 
-const PROJECTS = [
-  { id: 1, name: "Geass Redesign",          icon: "⚡", color: "#EF5A6F", status: "Active",    progress: 68, tasks: { done: 24, total: 35 }, due: "May 30, 2025" },
-  { id: 2, name: "College Semester Project", icon: "📚", color: "#7C3AED", status: "In Progress",progress: 40, tasks: { done: 12, total: 30 }, due: "Jun 15, 2025" },
-  { id: 3, name: "Freelance Landing Page",   icon: "🌐", color: "#3b82f6", status: "Active",    progress: 60, tasks: { done: 9,  total: 15 }, due: "Jul 01, 2025" },
-  { id: 4, name: "Personal Website",         icon: "💻", color: "#22c55e", status: "Done",      progress: 90, tasks: { done: 18, total: 20 }, due: "Apr 20, 2025" },
-];
-
 const STATUS_COLORS: Record<string, string> = {
-  Active:      "#22c55e",
-  "In Progress": "#f59e0b",
-  Done:        "#3b82f6",
-  Paused:      "#6b7280",
+  active:      "#22c55e",
+  archived:    "#6b7280",
+  done:        "#3b82f6",
 };
 
 interface Props {
-  selectedId: number;
-  onSelect: (id: number) => void;
+  selectedId: string;
+  onSelect: (id: string) => void;
 }
 
 export default function ProjectsPageHeader({ selectedId, onSelect }: Props) {
+  const { activeWorkspaceId, projects, tasks, updateProject } = useGeassStore();
   const [open, setOpen] = useState(false);
-  const project = PROJECTS.find(p => p.id === selectedId) ?? PROJECTS[0];
+
+  const workspaceProjects = projects.filter(p => p.workspaceId === activeWorkspaceId);
+  const project = workspaceProjects.find(p => p._id === selectedId) || workspaceProjects[0];
+
+  if (!project) return null;
+
+  // Compute dynamic task stats
+  const projectTasks = tasks.filter(t => t.projectId === project._id);
+  const doneTasks = projectTasks.filter(t => t.status === "done").length;
+  const totalTasks = projectTasks.length;
+  const computedProgress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+
+  // Keep project progress synced in store/DB if it changes
+  if (project.progress !== computedProgress) {
+    updateProject(project._id, { progress: computedProgress });
+  }
 
   return (
     <div className="px-6 py-4 border-b border-white/[0.05] bg-[#0a0a0c] shrink-0">
@@ -46,7 +55,7 @@ export default function ProjectsPageHeader({ selectedId, onSelect }: Props) {
           className="w-10 h-10 rounded-xl flex items-center justify-center text-xl shrink-0 border"
           style={{ backgroundColor: `${project.color}20`, borderColor: `${project.color}30` }}
         >
-          {project.icon}
+          {project.icon || "⚡"}
         </div>
 
         {/* Title + selector */}
@@ -63,25 +72,25 @@ export default function ProjectsPageHeader({ selectedId, onSelect }: Props) {
           {/* Status pill */}
           <div className="flex items-center gap-1.5 mt-1">
             <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: STATUS_COLORS[project.status] }} />
-            <span className="text-[11px] font-semibold" style={{ color: STATUS_COLORS[project.status] }}>
+            <span className="text-[11px] font-semibold capitalize" style={{ color: STATUS_COLORS[project.status] }}>
               {project.status}
             </span>
-            <span className="text-[11px] text-neutral-600 ml-1">Redesign the entire Geass platform with modern UI/UX</span>
+            <span className="text-[11px] text-neutral-600 ml-1">Workspace scoped project execution</span>
           </div>
 
           {/* Dropdown */}
           {open && (
             <div className="absolute top-full left-0 mt-2 w-64 bg-[#111113] border border-white/[0.08] rounded-xl shadow-2xl z-50 overflow-hidden">
-              {PROJECTS.map(p => (
+              {workspaceProjects.map(p => (
                 <button
-                  key={p.id}
-                  onClick={() => { onSelect(p.id); setOpen(false); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-white/[0.05] transition-colors ${p.id === selectedId ? "bg-white/[0.04]" : ""}`}
+                  key={p._id}
+                  onClick={() => { onSelect(p._id); setOpen(false); }}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-white/[0.05] transition-colors ${p._id === selectedId ? "bg-white/[0.04]" : ""}`}
                 >
-                  <span className="text-base">{p.icon}</span>
+                  <span className="text-base">{p.icon || "⚡"}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-[12px] font-semibold text-white truncate">{p.name}</p>
-                    <p className="text-[10px] text-neutral-600">{p.progress}% · {p.tasks.done}/{p.tasks.total} tasks</p>
+                    <p className="text-[10px] text-neutral-600">{p.progress}%</p>
                   </div>
                   <div className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: STATUS_COLORS[p.status] }} />
                 </button>
@@ -95,7 +104,7 @@ export default function ProjectsPageHeader({ selectedId, onSelect }: Props) {
           <div className="text-center">
             <p className="text-[11px] text-neutral-600 font-mono uppercase tracking-wider mb-0.5">Progress</p>
             <div className="flex items-end gap-1.5">
-              <span className="text-[22px] font-black" style={{ color: project.color }}>{project.progress}%</span>
+              <span className="text-[22px] font-black" style={{ color: project.color }}>{computedProgress}%</span>
               <TrendingUp size={13} className="text-neutral-600 mb-1" />
             </div>
           </div>
@@ -106,8 +115,8 @@ export default function ProjectsPageHeader({ selectedId, onSelect }: Props) {
             <p className="text-[11px] text-neutral-600 font-mono uppercase tracking-wider mb-0.5">Tasks</p>
             <div className="flex items-center gap-1">
               <CheckSquare size={13} className="text-neutral-500" />
-              <span className="text-[16px] font-black text-white">{project.tasks.done}</span>
-              <span className="text-[12px] text-neutral-600">/ {project.tasks.total}</span>
+              <span className="text-[16px] font-black text-white">{doneTasks}</span>
+              <span className="text-[12px] text-neutral-600">/ {totalTasks}</span>
             </div>
           </div>
 
@@ -117,7 +126,7 @@ export default function ProjectsPageHeader({ selectedId, onSelect }: Props) {
             <p className="text-[11px] text-neutral-600 font-mono uppercase tracking-wider mb-0.5">Due Date</p>
             <div className="flex items-center gap-1">
               <Calendar size={13} className="text-neutral-500" />
-              <span className="text-[13px] font-bold text-white">{project.due}</span>
+              <span className="text-[13px] font-bold text-white">{project.dueDate ? new Date(project.dueDate).toLocaleDateString() : "No Date"}</span>
             </div>
           </div>
         </div>
@@ -140,7 +149,7 @@ export default function ProjectsPageHeader({ selectedId, onSelect }: Props) {
           <div
             className="h-full rounded-full transition-all duration-700"
             style={{
-              width: `${project.progress}%`,
+              width: `${computedProgress}%`,
               background: `linear-gradient(90deg, ${project.color}, #7C3AED)`
             }}
           />
