@@ -8,6 +8,7 @@ import {
   Sparkles,
   ShieldCheck
 } from "lucide-react";
+import { HeroVideoDialog } from "./components/HeroVideoDialog";
 import { motion, useMotionTemplate, useMotionValue } from "framer-motion";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -162,10 +163,15 @@ export default function MarketingPage() {
               Start For Free ➔
             </Link>
             
-            <button className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-8 py-3.5 text-xs font-extrabold uppercase tracking-wider text-neutral-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
-              <Play size={12} className="text-[#EF5A6F] fill-[#EF5A6F]" />
-              Watch Demo
-            </button>
+            <HeroVideoDialog
+              animationStyle="from-center"
+              videoSrc="https://www.youtube.com/embed/XqZsoesa55w?autoplay=1"
+            >
+              <button className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/5 px-8 py-3.5 text-xs font-extrabold uppercase tracking-wider text-neutral-300 hover:bg-white/10 hover:text-white transition-all cursor-pointer">
+                <Play size={12} className="text-[#EF5A6F] fill-[#EF5A6F]" />
+                Watch Demo
+              </button>
+            </HeroVideoDialog>
           </div>
 
           {/* Small tagline */}

@@ -4,14 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import {
   DndContext,
   DragEndEvent,
-  DragOverEvent,
   DragStartEvent,
   PointerSensor,
   useSensor,
   useSensors,
   closestCenter,
   DragOverlay,
-  useDroppable,
 } from "@dnd-kit/core";
 import {
   SortableContext,
@@ -22,6 +20,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { motion, AnimatePresence } from "framer-motion";
 import { GripVertical } from "lucide-react";
+import { MagicCard } from "./MagicCard";
 
 // ─── Widget registry ──────────────────────────────────────────────────────────
 
@@ -73,24 +72,30 @@ function SortableCard({
       <div
         {...attributes}
         {...listeners}
-        className={`absolute top-2 right-2 z-20 p-1.5 rounded-lg cursor-grab active:cursor-grabbing
+        className={`absolute top-2 right-2 z-30 p-1.5 rounded-lg cursor-grab active:cursor-grabbing
           opacity-0 group-hover:opacity-100 transition-all duration-200
-          bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08]
-          ${isDraggingAny && !isDragging ? "opacity-0" : ""}`}
+          bg-white/[0.06] hover:bg-white/[0.12] border border-white/[0.08]`}
         title="Drag to rearrange"
       >
         <GripVertical size={11} className="text-neutral-500" />
       </div>
 
-      {/* Glow border on drag-over */}
+      {/* Drag-over dashed outline */}
       {isDraggingAny && !isDragging && (
         <div className="absolute inset-0 rounded-2xl border-2 border-dashed border-white/[0.06] pointer-events-none z-10" />
       )}
 
-      {/* Card content */}
-      <div className={`h-full transition-all duration-200 ${isDragging ? "opacity-0" : "opacity-100"}`}>
+      {/* Magic card spotlight wrapping the card content */}
+      <MagicCard
+        className={`h-full rounded-2xl transition-opacity duration-200 ${
+          isDragging ? "opacity-0" : "opacity-100"
+        }`}
+        gradientSize={160}
+        gradientOpacity={0.055}
+        borderOpacity={0.28}
+      >
         {widget.component}
-      </div>
+      </MagicCard>
     </motion.div>
   );
 }
