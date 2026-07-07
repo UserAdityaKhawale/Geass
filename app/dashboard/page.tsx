@@ -13,55 +13,114 @@ import ProjectsOverview  from "./components/ProjectsOverview";
 import QuickNotes        from "./components/QuickNotes";
 import ActivityFeed      from "./components/ActivityFeed";
 import AnalyticsSnapshot from "./components/AnalyticsSnapshot";
+import BentoDragGrid     from "./components/BentoDragGrid";
+
+// ─── Widget definitions for each sortable row ─────────────────────────────────
+
+/** Row 2 — Timeline, Tasks, Calendar (3-col grid) */
+const ROW2_WIDGETS = [
+  {
+    id: "timeline",
+    label: "Today's Timeline",
+    colSpan: "col-span-1",
+    component: <DailyTimeline />,
+  },
+  {
+    id: "tasks",
+    label: "Today's Tasks",
+    colSpan: "col-span-1",
+    component: <TodaysTasks />,
+  },
+  {
+    id: "calendar",
+    label: "Calendar Preview",
+    colSpan: "col-span-1",
+    component: <CalendarPreview />,
+  },
+];
+
+/** Row 3 — Pomodoro, Music, Projects, Notes (4-col grid) */
+const ROW3_WIDGETS = [
+  {
+    id: "pomodoro",
+    label: "Pomodoro Timer",
+    colSpan: "col-span-1",
+    component: <PomodoroTimer />,
+  },
+  {
+    id: "music",
+    label: "Music & White Noise",
+    colSpan: "col-span-1",
+    component: <MusicPlayer />,
+  },
+  {
+    id: "projects",
+    label: "Projects Overview",
+    colSpan: "col-span-1",
+    component: <ProjectsOverview />,
+  },
+  {
+    id: "notes",
+    label: "Quick Notes",
+    colSpan: "col-span-1",
+    component: <QuickNotes />,
+  },
+];
+
+/** Row 4 — Activity Feed, Analytics (5+7 of 12) */
+const ROW4_WIDGETS = [
+  {
+    id: "activity",
+    label: "Activity Log",
+    colSpan: "col-span-5",
+    component: <ActivityFeed />,
+  },
+  {
+    id: "analytics",
+    label: "Analytics Snapshot",
+    colSpan: "col-span-7",
+    component: <AnalyticsSnapshot />,
+  },
+];
+
+// ─── Skeleton fallback ────────────────────────────────────────────────────────
+
+function DashboardSkeleton() {
+  return (
+    <div className="p-4 space-y-3 min-h-full">
+      <div className="flex gap-3">
+        <div className="flex-1 min-w-0 space-y-3">
+          <div className="h-10 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
+          <div className="grid grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map(i => <div key={i} className="h-16 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />)}
+          </div>
+        </div>
+        <div className="w-[300px] shrink-0 h-[120px] bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
+      </div>
+      <div className="grid grid-cols-3 gap-3 h-[320px]">
+        {[1, 2, 3].map(i => <div key={i} className="h-full bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />)}
+      </div>
+      <div className="grid grid-cols-4 gap-3">
+        {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />)}
+      </div>
+      <div className="grid grid-cols-12 gap-3">
+        <div className="col-span-5 h-44 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
+        <div className="col-span-7 h-44 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function DashboardPage() {
   const { isHydrated } = useGeassStore();
 
-  if (!isHydrated) {
-    return (
-      <div className="p-4 space-y-3 min-h-full">
-        {/* Row 1 Skeleton */}
-        <div className="flex gap-3">
-          <div className="flex-1 min-w-0 space-y-3">
-            {/* Greeting */}
-            <div className="h-10 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
-            {/* Stats row */}
-            <div className="grid grid-cols-4 gap-3">
-              {[1, 2, 3, 4].map(i => (
-                <div key={i} className="h-16 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
-              ))}
-            </div>
-          </div>
-          {/* Streak */}
-          <div className="w-[300px] shrink-0 h-[120px] bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
-        </div>
-
-        {/* Row 2 Skeleton */}
-        <div className="grid grid-cols-3 gap-3 h-[320px]">
-          {[1, 2, 3].map(i => (
-            <div key={i} className="h-full bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
-          ))}
-        </div>
-
-        {/* Row 3 Skeleton */}
-        <div className="grid grid-cols-4 gap-3">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-32 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
-          ))}
-        </div>
-
-        {/* Row 4 Skeleton */}
-        <div className="grid grid-cols-12 gap-3">
-          <div className="col-span-5 h-44 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
-          <div className="col-span-7 h-44 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
-        </div>
-      </div>
-    );
-  }
+  if (!isHydrated) return <DashboardSkeleton />;
 
   return (
     <div className="p-4 space-y-3 min-h-full">
-      {/* ── Row 1: Greeting + Stats (left 67%) | Streak (right 33%) ── */}
+      {/* ── Row 1: Greeting + Stats | Streak ─────── fixed, not draggable ── */}
       <div className="flex gap-3">
         <div className="flex-1 min-w-0 space-y-3">
           <GreetingHeader />
@@ -72,30 +131,27 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Row 2: Timeline | Tasks | Calendar ── */}
-      <div className="grid grid-cols-3 gap-3" style={{ height: "320px" }}>
-        <DailyTimeline />
-        <TodaysTasks />
-        <CalendarPreview />
-      </div>
+      {/* ── Row 2: Timeline | Tasks | Calendar  ──── draggable ── */}
+      <BentoDragGrid
+        widgets={ROW2_WIDGETS}
+        storageKey="geass-bento-row2"
+        gridClass="grid grid-cols-3 gap-3"
+        className="h-[320px]"
+      />
 
-      {/* ── Row 3: Pomodoro | Music | Projects | Notes ── */}
-      <div className="grid grid-cols-4 gap-3">
-        <PomodoroTimer />
-        <MusicPlayer />
-        <ProjectsOverview />
-        <QuickNotes />
-      </div>
+      {/* ── Row 3: Pomodoro | Music | Projects | Notes  ── draggable ── */}
+      <BentoDragGrid
+        widgets={ROW3_WIDGETS}
+        storageKey="geass-bento-row3"
+        gridClass="grid grid-cols-4 gap-3"
+      />
 
-      {/* ── Row 4: Activity | Analytics ── */}
-      <div className="grid grid-cols-12 gap-3">
-        <div className="col-span-5">
-          <ActivityFeed />
-        </div>
-        <div className="col-span-7">
-          <AnalyticsSnapshot />
-        </div>
-      </div>
+      {/* ── Row 4: Activity | Analytics  ──────────── draggable ── */}
+      <BentoDragGrid
+        widgets={ROW4_WIDGETS}
+        storageKey="geass-bento-row4"
+        gridClass="grid grid-cols-12 gap-3"
+      />
     </div>
   );
 }
