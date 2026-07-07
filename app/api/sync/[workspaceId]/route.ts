@@ -7,6 +7,8 @@ import { Task } from "@/lib/models/Task";
 import { Project } from "@/lib/models/Project";
 import { FocusSession } from "@/lib/models/FocusSession";
 import { Workspace } from "@/lib/models/Workspace";
+import { Note } from "@/lib/models/Note";
+import { TimeBlock } from "@/lib/models/TimeBlock";
 
 // Default workspaces seeded for new users
 const DEFAULT_WORKSPACES = [
@@ -43,10 +45,12 @@ export async function GET(
     }
 
     // Fetch workspace-scoped data
-    const [projects, tasks, focusSessions] = await Promise.all([
+    const [projects, tasks, focusSessions, notes, timeblocks] = await Promise.all([
       Project.find({ workspaceId, userId }).sort({ createdAt: -1 }).lean(),
       Task.find({ workspaceId, userId }).sort({ orderIndex: 1 }).lean(),
       FocusSession.find({ workspaceId, userId }).sort({ completedAt: -1 }).limit(100).lean(),
+      Note.find({ workspaceId, userId }).sort({ updatedAt: -1 }).lean(),
+      TimeBlock.find({ workspaceId, userId }).sort({ start: 1 }).lean(),
     ]);
 
     return NextResponse.json({
@@ -54,6 +58,8 @@ export async function GET(
       projects:   projects.map(serialize),
       tasks:      tasks.map(serialize),
       focusSessions: focusSessions.map(serialize),
+      notes:      notes.map(serialize),
+      timeblocks: timeblocks.map(serialize),
     });
   } catch (err) {
     console.error("[sync] error:", err);

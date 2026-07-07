@@ -8,6 +8,8 @@ const TYPE_CONFIG = {
   project: { emoji: "📁", color: "#3b82f6" },
   focus:   { emoji: "⏱",  color: "#7C3AED" },
   system:  { emoji: "⚙️",  color: "#f59e0b" },
+  note:    { emoji: "📝",  color: "#f59e0b" },
+  schedule:{ emoji: "📅",  color: "#7C3AED" },
 };
 
 export default function ActivityFeed() {
@@ -33,7 +35,7 @@ export default function ActivityFeed() {
 
       <div className="space-y-0.5 max-h-[220px] overflow-y-auto scrollbar-thin scrollbar-thumb-white/[0.08]">
         {activityLog.slice(0, 5).map((item) => {
-          const config = TYPE_CONFIG[item.type] || { emoji: "📝", color: "#EF5A6F" };
+          const config = TYPE_CONFIG[item.type as keyof typeof TYPE_CONFIG] || { emoji: "📝", color: "#EF5A6F" };
           return (
             <div key={item.id} className="flex items-center gap-3 py-2 px-2 rounded-xl hover:bg-white/[0.03] transition-colors">
               <div

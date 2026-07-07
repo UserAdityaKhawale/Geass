@@ -1,16 +1,17 @@
 "use client";
 
-import { Pin, Clock, Search } from "lucide-react";
+import { Pin, Clock } from "lucide-react";
 
 export interface Note {
-  id: string;
+  _id: string;
+  workspaceId: string;
   title: string;
   snippet: string;
   content: string;
   pinned: boolean;
   tags: string[];
   color: string;
-  updatedAt: string;
+  updatedAt?: string;
 }
 
 const TAG_COLORS: Record<string, string> = {
@@ -86,7 +87,7 @@ export default function NoteCard({ note, selected, onClick, onPin, searchQuery }
           )}
           <div className="flex items-center gap-1 mt-1.5">
             <Clock size={8} className="text-neutral-700" />
-            <span className="text-[9px] text-neutral-700 font-mono">{note.updatedAt}</span>
+            <span className="text-[9px] text-neutral-700 font-mono">{note.updatedAt || "Just now"}</span>
           </div>
         </div>
       </div>

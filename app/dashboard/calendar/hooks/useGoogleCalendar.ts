@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { useGeassStore } from "@/store/useGeassStore";
 
 export interface CalendarEvent {
   id: string;
@@ -21,40 +22,34 @@ interface GoogleSyncState {
   syncing: boolean;
 }
 
-const MOCK_GOOGLE_EVENTS: CalendarEvent[] = [
+const GOOGLE_MOCK_EVENTS: CalendarEvent[] = [
   { id: "g1", title: "Team Standup",         date: getTodayStr(),       startHour: 9,  endHour: 9.5,  color: "#7C3AED", calendar: "College",  platform: "Google Meet", isGoogle: true },
   { id: "g2", title: "Project Discussion",   date: getTodayStr(),       startHour: 11, endHour: 12,   color: "#3b82f6", calendar: "Work",     platform: "Google Meet", isGoogle: true },
   { id: "g3", title: "Client Call",          date: getTodayStr(),       startHour: 14, endHour: 15,   color: "#EF5A6F", calendar: "Work",     platform: "Zoom",        isGoogle: true },
-  { id: "g4", title: "Gym Time",             date: getTodayStr(),       startHour: 17, endHour: 18.5, color: "#22c55e", calendar: "Fitness",  platform: "Personal",    isGoogle: true },
-  { id: "g5", title: "Study Session",        date: getOffsetStr(1),     startHour: 10, endHour: 12,   color: "#f59e0b", calendar: "College",  platform: "Personal",    isGoogle: true },
-  { id: "g6", title: "Design Review",        date: getOffsetStr(2),     startHour: 14, endHour: 15.5, color: "#7C3AED", calendar: "Work",     platform: "Google Meet", isGoogle: true },
-  { id: "g7", title: "Dentist Appointment",  date: getOffsetStr(3),     startHour: 11, endHour: 12,   color: "#ec4899", calendar: "Personal", platform: "In Person",   isGoogle: true },
-  { id: "g8", title: "Weekend Run",          date: getOffsetStr(5),     startHour: 7,  endHour: 8,    color: "#22c55e", calendar: "Fitness",  platform: "Personal",    isGoogle: true },
-  { id: "g9", title: "Movie Night",          date: getOffsetStr(6),     startHour: 20, endHour: 22.5, color: "#f59e0b", calendar: "Personal", platform: "Personal",    isGoogle: false },
 ];
 
 function getTodayStr() {
   return new Date().toISOString().split("T")[0];
 }
 
-function getOffsetStr(days: number) {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  return d.toISOString().split("T")[0];
-}
+const PRIORITY_COLORS = {
+  high: "#EF5A6F",
+  medium: "#f59e0b",
+  low: "#22c55e",
+};
 
 export function useGoogleCalendar() {
-  const [events, setEvents] = useState<CalendarEvent[]>(MOCK_GOOGLE_EVENTS);
+  const { activeWorkspaceId, tasks, addTask, deleteTask } = useGeassStore();
   const [syncState, setSyncState] = useState<GoogleSyncState>({
     connected: false,
     lastSynced: null,
     syncing: false,
   });
 
+  // Connect Google Sync
   const connect = useCallback(async () => {
     setSyncState(s => ({ ...s, syncing: true }));
-    // Simulate OAuth + fetch delay
-    await new Promise(res => setTimeout(res, 1800));
+    await new Promise(res => setTimeout(res, 1500));
     setSyncState({ connected: true, lastSynced: "Just now", syncing: false });
   }, []);
 
@@ -65,21 +60,55 @@ export function useGoogleCalendar() {
   const syncNow = useCallback(async () => {
     if (!syncState.connected) return;
     setSyncState(s => ({ ...s, syncing: true }));
-    await new Promise(res => setTimeout(res, 1200));
+    await new Promise(res => setTimeout(res, 1000));
     setSyncState(s => ({ ...s, syncing: false, lastSynced: "Just now" }));
   }, [syncState.connected]);
 
+  // Combine tasks with dueDates (mapped to calendar events) and optional synced Google events
+  const events = useMemo(() => {
+    const workspaceTasks = tasks.filter(t => t.workspaceId === activeWorkspaceId && t.dueDate);
+    const localEvents: CalendarEvent[] = workspaceTasks.map(t => {
+      let datePart = getTodayStr();
+      try {
+        if (t.dueDate) datePart = t.dueDate.split("T")[0];
+      } catch {}
+
+      return {
+        id: t._id,
+        title: t.title,
+        date: datePart,
+        startHour: 10 + (t.orderIndex % 5), // distribute placeholder hours based on index
+        endHour: 11 + (t.orderIndex % 5),
+        color: PRIORITY_COLORS[t.priority] || PRIORITY_COLORS.medium,
+        calendar: t.tag || "Personal",
+        description: `Task priority: ${t.priority}`,
+      };
+    });
+
+    if (syncState.connected) {
+      return [...localEvents, ...GOOGLE_MOCK_EVENTS];
+    }
+    return localEvents;
+  }, [tasks, activeWorkspaceId, syncState.connected]);
+
   const addEvent = useCallback((event: Omit<CalendarEvent, "id">) => {
-    setEvents(es => [...es, { ...event, id: `local-${Date.now()}` }]);
-  }, []);
+    if (!activeWorkspaceId) return;
+    // Map calendar event back to a Task inside Zustand + MongoDB
+    addTask({
+      _id: `task-${Date.now()}`,
+      workspaceId: activeWorkspaceId,
+      title: event.title,
+      priority: event.color === "#EF5A6F" ? "high" : event.color === "#f59e0b" ? "medium" : "low",
+      status: "todo",
+      dueDate: new Date(event.date + "T10:00:00.000Z").toISOString(),
+      orderIndex: tasks.length,
+      tag: event.calendar,
+    });
+  }, [addTask, activeWorkspaceId, tasks.length]);
 
-  const deleteEvent = useCallback((id: string) => {
-    setEvents(es => es.filter(e => e.id !== id));
-  }, []);
+  const removeEvent = useCallback((id: string) => {
+    deleteTask(id);
+  }, [deleteTask]);
 
-  const updateEvent = useCallback((id: string, changes: Partial<CalendarEvent>) => {
-    setEvents(es => es.map(e => e.id === id ? { ...e, ...changes } : e));
-  }, []);
-
-  return { events, syncState, connect, disconnect, syncNow, addEvent, deleteEvent, updateEvent };
+  return { events, syncState, connect, disconnect, syncNow, addEvent, deleteEvent: removeEvent };
 }

@@ -36,14 +36,14 @@ export default function NoteEditor({ note, onUpdate, onDelete, onPin }: Props) {
     if (editorRef.current && editorRef.current.innerHTML !== note.content) {
       editorRef.current.innerHTML = note.content;
     }
-  }, [note.id]);
+  }, [note._id]);
 
   const handleInput = useCallback(() => {
     if (!editorRef.current) return;
     setSaved(false);
-    onUpdate(note.id, { content: editorRef.current.innerHTML, snippet: editorRef.current.innerText.slice(0, 120) });
+    onUpdate(note._id, { content: editorRef.current.innerHTML, snippet: editorRef.current.innerText.slice(0, 120) });
     setTimeout(() => setSaved(true), 800);
-  }, [note.id, onUpdate]);
+  }, [note._id, onUpdate]);
 
   const exec = (cmd: string, value?: string) => {
     document.execCommand(cmd, false, value);
@@ -64,7 +64,7 @@ export default function NoteEditor({ note, onUpdate, onDelete, onPin }: Props) {
             {NOTE_COLORS.map(c => (
               <button
                 key={c}
-                onClick={() => onUpdate(note.id, { color: c })}
+                onClick={() => onUpdate(note._id, { color: c })}
                 className={`w-2.5 h-2.5 rounded-full transition-transform ${note.color === c ? "scale-125" : "hover:scale-110 opacity-40 hover:opacity-80"}`}
                 style={{ backgroundColor: c }}
               />
@@ -74,7 +74,7 @@ export default function NoteEditor({ note, onUpdate, onDelete, onPin }: Props) {
           <div className="flex-1 min-w-0">
             <input
               value={note.title}
-              onChange={e => onUpdate(note.id, { title: e.target.value })}
+              onChange={e => onUpdate(note._id, { title: e.target.value })}
               placeholder="Untitled note…"
               className="w-full bg-transparent text-[24px] font-black text-white placeholder:text-neutral-700 focus:outline-none leading-tight"
             />
@@ -98,13 +98,13 @@ export default function NoteEditor({ note, onUpdate, onDelete, onPin }: Props) {
           {/* Pin + Delete */}
           <div className="flex items-center gap-1.5 shrink-0 pt-1">
             <button
-              onClick={() => onPin(note.id)}
+              onClick={() => onPin(note._id)}
               className={`p-1.5 rounded-xl border transition-all ${note.pinned ? "border-[#f59e0b]/30 text-[#f59e0b] bg-[#f59e0b]/10" : "border-white/[0.08] text-neutral-700 hover:text-[#f59e0b] hover:border-[#f59e0b]/20"}`}
             >
               <Pin size={13} fill={note.pinned ? "currentColor" : "none"} />
             </button>
             <button
-              onClick={() => onDelete(note.id)}
+              onClick={() => onDelete(note._id)}
               className="p-1.5 rounded-xl border border-white/[0.08] text-neutral-700 hover:text-[#EF5A6F] hover:border-[#EF5A6F]/20 transition-all"
             >
               <Trash2 size={13} />
@@ -122,7 +122,7 @@ export default function NoteEditor({ note, onUpdate, onDelete, onPin }: Props) {
             >
               {tag}
               <button
-                onClick={() => onUpdate(note.id, { tags: note.tags.filter(t => t !== tag) })}
+                onClick={() => onUpdate(note._id, { tags: note.tags.filter(t => t !== tag) })}
                 className="hover:opacity-60 transition-opacity"
               >
                 <X size={8} />
@@ -135,7 +135,7 @@ export default function NoteEditor({ note, onUpdate, onDelete, onPin }: Props) {
               {AVAILABLE_TAGS.filter(t => !note.tags.includes(t)).map(tag => (
                 <button
                   key={tag}
-                  onClick={() => { onUpdate(note.id, { tags: [...note.tags, tag] }); setAddingTag(false); }}
+                  onClick={() => { onUpdate(note._id, { tags: [...note.tags, tag] }); setAddingTag(false); }}
                   className="text-[10px] font-bold px-2 py-0.5 rounded-lg hover:opacity-80 transition-opacity"
                   style={{ color: TAG_COLORS[tag], backgroundColor: `${TAG_COLORS[tag]}18` }}
                 >
@@ -196,6 +196,7 @@ export default function NoteEditor({ note, onUpdate, onDelete, onPin }: Props) {
         </button>
       </div>
 
+      {/* Divider */}
       <div className="h-px bg-white/[0.05] mx-8 shrink-0" />
 
       {/* Editable content area */}

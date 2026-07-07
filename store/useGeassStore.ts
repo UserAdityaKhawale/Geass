@@ -39,6 +39,7 @@ export interface Task {
   tag?: string;
   progress?: number;
   createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface FocusSession {
@@ -49,13 +50,36 @@ export interface FocusSession {
   completedAt: string;
 }
 
+export interface Note {
+  _id: string;
+  workspaceId: string;
+  title: string;
+  snippet: string;
+  content: string;
+  pinned: boolean;
+  tags: string[];
+  color: string;
+  updatedAt?: string;
+}
+
+export interface TimeBlock {
+  _id: string;
+  workspaceId: string;
+  title: string;
+  sub: string;
+  start: string; // "hh:mm"
+  end: string;   // "hh:mm"
+  color: string;
+  date: string;  // "YYYY-MM-DD"
+}
+
 export interface ActivityEntry {
   id: string;
   action: string;
   subject: string;
   detail?: string;
   timestamp: string;
-  type: "task" | "project" | "focus" | "system";
+  type: "task" | "project" | "focus" | "system" | "note" | "schedule";
 }
 
 export type SyncStatus = "idle" | "syncing" | "error" | "offline";
@@ -69,6 +93,8 @@ interface GeassStore {
   projects: Project[];
   tasks: Task[];
   focusSessions: FocusSession[];
+  notes: Note[];
+  timeblocks: TimeBlock[];
   activityLog: ActivityEntry[];
   syncStatus: SyncStatus;
   isHydrated: boolean;
@@ -95,6 +121,16 @@ interface GeassStore {
   setFocusSessions: (sessions: FocusSession[]) => void;
   addFocusSession: (session: FocusSession) => void;
 
+  // Note actions
+  setNotes: (notes: Note[]) => void;
+  addNote: (note: Note) => void;
+  updateNote: (id: string, changes: Partial<Note>) => void;
+  deleteNote: (id: string) => void;
+
+  // TimeBlock actions
+  setTimeBlocks: (blocks: TimeBlock[]) => void;
+  addTimeBlock: (block: TimeBlock) => void;
+
   // Activity log
   pushActivity: (entry: Omit<ActivityEntry, "id" | "timestamp">) => void;
 
@@ -104,6 +140,8 @@ interface GeassStore {
     projects?: Project[];
     tasks?: Task[];
     focusSessions?: FocusSession[];
+    notes?: Note[];
+    timeblocks?: TimeBlock[];
   }) => void;
   setHydrated: (v: boolean) => void;
   setSyncStatus: (s: SyncStatus) => void;
@@ -120,6 +158,8 @@ export const useGeassStore = create<GeassStore>()(
       projects: [],
       tasks: [],
       focusSessions: [],
+      notes: [],
+      timeblocks: [],
       activityLog: [],
       syncStatus: "idle",
       isHydrated: false,
@@ -197,6 +237,34 @@ export const useGeassStore = create<GeassStore>()(
         bgFetch("POST", "/api/focus", session);
       },
 
+      // ── Notes ──
+      setNotes: (notes) => set({ notes }),
+      addNote: (note) => {
+        set((s) => ({ notes: [note, ...s.notes] }));
+        get().pushActivity({ action: "created note", subject: note.title, type: "note" });
+        bgFetch("POST", "/api/notes", note);
+      },
+      updateNote: (id, changes) => {
+        set((s) => ({
+          notes: s.notes.map((n) => (n._id === id ? { ...n, ...changes, updatedAt: "Just now" } : n)),
+        }));
+        bgFetch("PATCH", `/api/notes/${id}`, changes);
+      },
+      deleteNote: (id) => {
+        const note = get().notes.find((n) => n._id === id);
+        set((s) => ({ notes: s.notes.filter((n) => n._id !== id) }));
+        if (note) get().pushActivity({ action: "deleted note", subject: note.title, type: "note" });
+        bgFetch("DELETE", `/api/notes/${id}`, {});
+      },
+
+      // ── TimeBlocks ──
+      setTimeBlocks: (blocks) => set({ timeblocks: blocks }),
+      addTimeBlock: (block) => {
+        set((s) => ({ timeblocks: [...s.timeblocks, block].sort((a, b) => a.start.localeCompare(b.start)) }));
+        get().pushActivity({ action: "added timeblock", subject: block.title, type: "schedule" });
+        bgFetch("POST", "/api/timeblocks", block);
+      },
+
       // ── Activity ──
       pushActivity: (entry) => {
         const full: ActivityEntry = {
@@ -216,6 +284,8 @@ export const useGeassStore = create<GeassStore>()(
           projects:      data.projects      ?? get().projects,
           tasks:         data.tasks         ?? get().tasks,
           focusSessions: data.focusSessions ?? get().focusSessions,
+          notes:         data.notes         ?? get().notes,
+          timeblocks:    data.timeblocks    ?? get().timeblocks,
           isHydrated: true,
           syncStatus: "idle",
         });
@@ -226,19 +296,19 @@ export const useGeassStore = create<GeassStore>()(
     {
       name: "geass-store",
       storage: createJSONStorage(() => {
-        // Safe localStorage access (SSR guard)
         if (typeof window === "undefined") {
           return { getItem: () => null, setItem: () => {}, removeItem: () => {} };
         }
         return localStorage;
       }),
-      // Only persist these fields to localStorage
       partialize: (state) => ({
         activeWorkspaceId: state.activeWorkspaceId,
         workspaces:        state.workspaces,
         projects:          state.projects,
         tasks:             state.tasks,
         focusSessions:     state.focusSessions,
+        notes:             state.notes,
+        timeblocks:        state.timeblocks,
         activityLog:       state.activityLog,
       }),
     }
@@ -259,7 +329,6 @@ function bgFetch(method: string, url: string, body: object) {
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
     } catch {
-      // Queue for retry when back online
       queueMutation(method, url, body);
     }
   };
@@ -315,26 +384,3 @@ export async function flushSyncQueue() {
     localStorage.setItem(QUEUE_KEY, JSON.stringify(failed));
   } catch {}
 }
-
-// ─── Selector helpers ─────────────────────────────────────────────────────────
-
-export const selectWorkspaceTasks = (workspaceId: string) => (s: GeassStore) =>
-  s.tasks.filter((t) => t.workspaceId === workspaceId);
-
-export const selectWorkspaceProjects = (workspaceId: string) => (s: GeassStore) =>
-  s.projects.filter((p) => p.workspaceId === workspaceId);
-
-export const selectTodaysTasks = (workspaceId: string) => (s: GeassStore) => {
-  const today = new Date().toISOString().split("T")[0];
-  return s.tasks.filter(
-    (t) => t.workspaceId === workspaceId && t.dueDate?.startsWith(today) && t.status !== "done"
-  );
-};
-
-export const selectThisWeekFocus = (workspaceId: string) => (s: GeassStore) => {
-  const weekAgo = new Date();
-  weekAgo.setDate(weekAgo.getDate() - 7);
-  return s.focusSessions.filter(
-    (f) => f.workspaceId === workspaceId && new Date(f.completedAt) > weekAgo
-  );
-};

@@ -61,11 +61,11 @@ export default function NotesSidebar({ notes, selectedId, onSelect, onPin, onNew
             </p>
             {filtered.map(n => (
               <NoteCard
-                key={n.id}
+                key={n._id}
                 note={n}
-                selected={n.id === selectedId}
-                onClick={() => onSelect(n.id)}
-                onPin={() => onPin(n.id)}
+                selected={n._id === selectedId}
+                onClick={() => onSelect(n._id)}
+                onPin={() => onPin(n._id)}
                 searchQuery={searchQuery}
               />
             ))}
@@ -79,7 +79,7 @@ export default function NotesSidebar({ notes, selectedId, onSelect, onPin, onNew
                   <span className="text-[9px] font-mono uppercase tracking-widest text-neutral-700">Pinned</span>
                 </div>
                 {pinned.map(n => (
-                  <NoteCard key={n.id} note={n} selected={n.id === selectedId} onClick={() => onSelect(n.id)} onPin={() => onPin(n.id)} searchQuery="" />
+                  <NoteCard key={n._id} note={n} selected={n._id === selectedId} onClick={() => onSelect(n._id)} onPin={() => onPin(n._id)} searchQuery="" />
                 ))}
               </div>
             )}
@@ -90,7 +90,7 @@ export default function NotesSidebar({ notes, selectedId, onSelect, onPin, onNew
                 <span className="text-[9px] font-mono uppercase tracking-widest text-neutral-700">Recent</span>
               </div>
               {recent.map(n => (
-                <NoteCard key={n.id} note={n} selected={n.id === selectedId} onClick={() => onSelect(n.id)} onPin={() => onPin(n.id)} searchQuery="" />
+                <NoteCard key={n._id} note={n} selected={n._id === selectedId} onClick={() => onSelect(n._id)} onPin={() => onPin(n._id)} searchQuery="" />
               ))}
             </div>
 
@@ -98,7 +98,7 @@ export default function NotesSidebar({ notes, selectedId, onSelect, onPin, onNew
               <span className="text-[9px] font-mono uppercase tracking-widest text-neutral-700 px-1">All Notes ({all.length})</span>
               <div className="mt-1.5">
                 {all.map(n => (
-                  <NoteCard key={n.id} note={n} selected={n.id === selectedId} onClick={() => onSelect(n.id)} onPin={() => onPin(n.id)} searchQuery="" />
+                  <NoteCard key={n._id} note={n} selected={n._id === selectedId} onClick={() => onSelect(n._id)} onPin={() => onPin(n._id)} searchQuery="" />
                 ))}
               </div>
             </div>
