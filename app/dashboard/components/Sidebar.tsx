@@ -67,7 +67,8 @@ export default function Sidebar() {
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
         {/* Primary nav */}
         {NAV_ITEMS.map(({ icon: Icon, label, href }) => {
-          const active = pathname === href;
+          // Exact match for root dashboard, startsWith for all sub-routes
+          const active = href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
           return (
             <Link
               key={label}
