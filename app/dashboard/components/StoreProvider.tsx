@@ -23,7 +23,12 @@ export default function StoreProvider({ children }: Props) {
 
         // We fetch/sync with temporary default of "default_init" to let the route return user workspaces
         const res = await fetch(`/api/sync/${wsId || "new_user"}`);
-        if (!res.ok) throw new Error("Sync failed");
+        if (!res.ok) {
+          console.warn("Sync endpoint failed, falling back to local storage cache.");
+          store.setSyncStatus("offline");
+          store.setHydrated(true);
+          return;
+        }
 
         const data = await res.json();
 
