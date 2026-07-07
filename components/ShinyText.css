@@ -1,0 +1,16 @@
+.shiny-text {
+  display: inline-block;
+  white-space: nowrap;
+}
+
+@keyframes shiny-text-slide {
+  0% {
+    background-position: 200% center;
+  }
+  50% {
+    background-position: 0% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}

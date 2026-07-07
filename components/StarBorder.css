@@ -1,0 +1,73 @@
+.star-border-container {
+  display: inline-block;
+  position: relative;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.border-gradient-bottom,
+.border-gradient-top {
+  position: absolute;
+  width: 320%;
+  height: 55%;
+  opacity: 0.68;
+  border-radius: 50%;
+  animation: star-movement linear infinite alternate;
+  z-index: 0;
+}
+
+.border-gradient-bottom {
+  bottom: -18px;
+  right: -260%;
+}
+
+.border-gradient-top {
+  top: -18px;
+  left: -260%;
+}
+
+@keyframes star-movement {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-100%, 0%);
+    opacity: 0;
+  }
+}
+
+.inner-content {
+  position: relative;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(9, 11, 17, 0.82);
+  color: white;
+  font-size: 16px;
+  text-align: center;
+  padding: 18px 28px;
+  border-radius: 20px;
+  z-index: 1;
+  backdrop-filter: blur(10px);
+}
+
+@keyframes star-movement-bottom {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-100%, 0%);
+    opacity: 0;
+  }
+}
+
+@keyframes star-movement-top {
+  0% {
+    transform: translate(0%, 0%);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(100%, 0%);
+    opacity: 0;
+  }
+}

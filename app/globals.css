@@ -3,11 +3,44 @@
 html,
 body,
 :root {
-  height: 100%;
+  min-height: 100%;
 }
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #050505;
+  --foreground: #f8fafc;
+  --surface: #111111;
+  --surface-rgb: 17, 17, 17;
+  --surface-strong: rgba(255, 255, 255, 0.08);
+  --surface-border: rgba(255, 255, 255, 0.08);
+  --text-muted: #94a3a8;
+  --text-muted-strong: #cbd5e1;
+  --accent: #ef5a6f;
+  --accent-rgb: 239, 90, 111;
+  --accent-soft: rgba(239, 90, 111, 0.14);
+  --glow: rgba(239, 90, 111, 0.12);
+  --grid: rgba(255, 255, 255, 0.08);
+  --shadow: rgba(0, 0, 0, 0.35);
+}
+
+html.light {
+  color-scheme: dark;
+  --background: #222225;
+  --background-rgb: 34, 34, 37;
+  --foreground: #f8fafc;
+  --foreground-rgb: 248, 250, 252;
+  --surface: #2d2d32;
+  --surface-rgb: 45, 45, 50;
+  --surface-strong: rgba(255, 255, 255, 0.06);
+  --surface-border: rgba(255, 255, 255, 0.08);
+  --text-muted: #94a3b8;
+  --text-muted-strong: #cbd5e1;
+  --accent: #ef5a6f;
+  --accent-rgb: 239, 90, 111;
+  --accent-soft: rgba(239, 90, 111, 0.14);
+  --glow: rgba(239, 90, 111, 0.12);
+  --grid: rgba(255, 255, 255, 0.06);
+  --shadow: rgba(0, 0, 0, 0.4);
 }
 
 @theme inline {
@@ -17,15 +50,964 @@ body,
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+body {
+  min-height: 100%;
+  background: var(--background);
+  color: var(--foreground);
+  font-family:
+    var(--font-sans),
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+::selection {
+  background: rgba(var(--accent-rgb), 0.18);
+  color: var(--foreground);
+}
+
+@tailwind utilities;
+
+/* ================================================= */
+/* GEASS HERO BACKGROUND */
+/* ================================================= */
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ======================================== */
+/* GRID */
+/* ======================================== */
+
+.hero-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: 0.16;
+  animation: gridShift 18s linear infinite;
+}
+
+@keyframes gridShift {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 120px 120px;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/* ======================================== */
+/* BIG RED GLOW */
+/* ======================================== */
+
+.hero-glow {
+  background:
+    radial-gradient(
+      circle at 15% 20%,
+      rgba(239, 90, 111, 0.16),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 80% 80%,
+      rgba(255, 135, 148, 0.12),
+      transparent 28%
+    );
+  filter: blur(90px);
+  opacity: 0.85;
+  animation: glowFloat 16s ease-in-out infinite;
 }
+
+@keyframes glowFloat {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(8px, -6px, 0);
+  }
+}
+
+/* ======================================== */
+/* VIGNETTE */
+/* ======================================== */
+
+.hero-glow::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background: radial-gradient(
+    circle,
+    transparent 45%,
+    rgba(0, 0, 0, 0.35) 75%,
+    rgba(0, 0, 0, 0.85) 100%
+  );
+}
+
+/* ======================================== */
+/* NOISE */
+/* ======================================== */
+
+.hero-noise {
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.035) 1px,
+    transparent 1px
+  );
+
+  background-size: 4px 4px;
+
+  opacity: 0.35;
+
+  mix-blend-mode: soft-light;
+}
+
+/* ======================================== */
+/* RED LIGHT */
+/* ======================================== */
+
+.hero-light {
+  position: absolute;
+  width: 580px;
+  height: 580px;
+  left: 48%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: rgba(239, 90, 111, 0.14);
+  filter: blur(120px);
+  animation: pulseGlow 10s ease-in-out infinite;
+}
+
+/* ======================================== */
+/* FLOATING LIGHT */
+/* ======================================== */
+
+.hero-light-small {
+  position: absolute;
+
+  width: 250px;
+
+  height: 250px;
+
+  right: 15%;
+
+  top: 18%;
+
+  border-radius: 999px;
+
+  background: rgba(255, 120, 140, 0.1);
+
+  filter: blur(90px);
+}
+/* ================================================= */
+/* PREMIUM BUTTONS */
+/* ================================================= */
+
+@layer components {
+  .btn-primary {
+    @apply relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#ff6678] via-[#EF5A6F] to-[#D63B53] px-10 py-5 font-semibold text-white transition-all duration-300;
+  }
+
+  .btn-primary:hover {
+    transform: translateY(-3px) scale(1.03);
+    box-shadow:
+      0 0 40px rgba(239, 90, 111, 0.45),
+      0 0 90px rgba(239, 90, 111, 0.25);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.97);
+  }
+
+  .btn-secondary {
+    @apply rounded-2xl border border-white/10 bg-white/5 px-10 py-5 font-semibold text-neutral-300 backdrop-blur-xl transition-all duration-300;
+  }
+
+  .btn-secondary:hover {
+    border-color: rgba(239, 90, 111, 0.5);
+    background: rgba(255, 255, 255, 0.08);
+    color: white;
+  }
+}
+
+/* ================================================= */
+/* GLASS EFFECT */
+/* ================================================= */
+
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+
+  backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ================================================= */
+/* PREMIUM CARD */
+/* ================================================= */
+
+.premium-card {
+  position: relative;
+
+  overflow: hidden;
+}
+
+.premium-card::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.18),
+    transparent 30%
+  );
+
+  pointer-events: none;
+}
+
+/* ================================================= */
+/* TEXT GLOW */
+/* ================================================= */
+
+.text-glow {
+  text-shadow:
+    0 0 20px rgba(255, 255, 255, 0.08),
+    0 0 40px rgba(255, 255, 255, 0.06);
+}
+
+.red-glow {
+  text-shadow: 0 0 20px rgba(239, 90, 111, 0.6);
+}
+
+/* ================================================= */
+/* FADE IN */
+/* ================================================= */
+
+.fade-up {
+  animation: fadeUp 1s ease forwards;
+}
+
+@keyframes pulse-slow {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.95;
+  }
+  50% {
+    transform: scale(1.02);
+    opacity: 1;
+  }
+}
+
+.animate-pulse-slow {
+  animation: pulse-slow 5s ease-in-out infinite;
+}
+
+@keyframes fadeUp {
+  from {
+    opacity: 0;
+
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: translateY(0);
+  }
+}
+
+/* ================================================= */
+/* FLOAT */
+/* ================================================= */
+
+.float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-12px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+/* ================================================= */
+/* GLOW PULSE */
+/* ================================================= */
+
+@keyframes pulseGlow {
+  0% {
+    opacity: 0.55;
+
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  50% {
+    opacity: 0.9;
+
+    transform: translate(-50%, -50%) scale(1.08);
+  }
+
+  100% {
+    opacity: 0.55;
+
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+/* ================================================= */
+/* GRID ANIMATION */
+/* ================================================= */
+
+.hero-grid {
+  animation: gridMove 18s linear infinite;
+}
+
+@keyframes gridMove {
+  from {
+    background-position:
+      0 0,
+      0 0;
+  }
+
+  to {
+    background-position:
+      60px 60px,
+      60px 60px;
+  }
+}
+
+/* ================================================= */
+/* SCROLLBAR */
+/* ================================================= */
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #050505;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ef5a6f;
+
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #ff7386;
+}
+
+/* ================================================= */
+/* SELECTION */
+/* ================================================= */
+
+::selection {
+  background: #ef5a6f;
+
+  color: white;
+}
+
+/* ================================================= */
+/* PREMIUM VISUAL UTILITIES */
+/* ================================================= */
+
+.transition-premium {
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.glass-panel-hover:hover {
+  border-color: rgba(239, 90, 111, 0.3);
+  box-shadow: 
+    0 12px 40px 0 rgba(0, 0, 0, 0.5),
+    0 0 20px 0 rgba(239, 90, 111, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.glow-card-border {
+  position: relative;
+}
+
+.glow-card-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.glow-card-border-hover:hover::before {
+  background: linear-gradient(to bottom, rgba(239, 90, 111, 0.5), rgba(239, 90, 111, 0.1));
+}
+
+.text-gradient-red {
+  background: linear-gradient(135deg, #ffffff 30%, #ff8191 70%, #ef5a6f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.section-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.feature-card {
+  background: rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.feature-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(239, 90, 111, 0.25);
+}
+
+.testimonial-marquee {
+  overflow: hidden;
+}
+
+.testimonial-track {
+  display: inline-flex;
+  gap: 1.25rem;
+  animation: marqueeScroll 24s linear infinite;
+}
+
+.testimonial-item {
+  flex: 0 0 auto;
+}
+
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+/* ===========================================================
+   HERO GRID
+=========================================================== */
+
+.hero-grid {
+  position: absolute;
+  inset: 0;
+
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+
+  background-size: 56px 56px;
+
+  opacity: 0.45;
+
+  mask-image: radial-gradient(circle at center, black 40%, transparent 100%);
+
+  -webkit-mask-image: radial-gradient(
+    circle at center,
+    black 40%,
+    transparent 100%
+  );
+
+  animation: gridMove 25s linear infinite;
+}
+
+/* ===========================================================
+   MAIN RED GLOW
+=========================================================== */
+
+.hero-glow {
+  position: absolute;
+  inset: 0;
+
+  background: radial-gradient(
+    circle at center,
+    rgba(239, 90, 111, 0.16),
+    rgba(239, 90, 111, 0.08) 35%,
+    rgba(239, 90, 111, 0.04) 55%,
+    transparent 75%
+  );
+
+  filter: blur(60px);
+  animation: glowBreathe 16s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform, opacity;
+}
+
+@keyframes glowBreathe {
+  0%, 100% {
+    opacity: 0.8;
+    transform: scale(1) translate3d(0, 0, 0);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.08) translate3d(15px, -10px, 0);
+  }
+}
+
+/* ===========================================================
+   HERO VIGNETTE
+=========================================================== */
+
+.hero-glow::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background: radial-gradient(
+    circle,
+    transparent 45%,
+    rgba(0, 0, 0, 0.28) 72%,
+    rgba(0, 0, 0, 0.82) 100%
+  );
+}
+
+/* ===========================================================
+   NOISE
+=========================================================== */
+
+.hero-noise {
+  position: absolute;
+
+  inset: 0;
+
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.03) 1px,
+    transparent 1px
+  );
+
+  background-size: 4px 4px;
+
+  opacity: 0.25;
+
+  mix-blend-mode: soft-light;
+}
+
+/* ===========================================================
+   MAIN LIGHT
+=========================================================== */
+
+.hero-light {
+  position: absolute;
+
+  left: 50%;
+  top: 38%;
+
+  width: 520px;
+  height: 520px;
+
+  transform: translate(-50%, -50%);
+
+  border-radius: 999px;
+
+  background: rgba(239, 90, 111, 0.18);
+
+  filter: blur(120px);
+
+  animation: pulseGlow 7s ease-in-out infinite;
+}
+
+/* ===========================================================
+   SECONDARY LIGHT
+=========================================================== */
+
+.hero-light-small {
+  position: absolute;
+
+  right: 12%;
+  top: 18%;
+
+  width: 220px;
+  height: 220px;
+
+  border-radius: 999px;
+
+  background: rgba(255, 120, 140, 0.1);
+
+  filter: blur(90px);
+}
+
+/* ===========================================================
+   GLASS
+=========================================================== */
+
+.glass {
+  background: rgba(255, 255, 255, 0.05);
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  backdrop-filter: blur(18px);
+
+  -webkit-backdrop-filter: blur(18px);
+}
+
+/* ===========================================================
+   PREMIUM CARD
+=========================================================== */
+
+.premium-card {
+  position: relative;
+
+  overflow: hidden;
+}
+
+.premium-card::before {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.18),
+    transparent 30%
+  );
+
+  pointer-events: none;
+}
+
+.premium-card::after {
+  content: "";
+
+  position: absolute;
+
+  inset: 0;
+
+  border-radius: inherit;
+
+  border: 1px solid rgba(255, 255, 255, 0.06);
+
+  pointer-events: none;
+} /* ===========================================================
+   NAVBAR ANIMATIONS
+=========================================================== */
+
+/* ============================
+   LOGO MEDAL
+============================ */
+
+.logo-medal {
+  position: relative;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  isolation: isolate;
+}
+
+/* ============================
+   STAR
+============================ */
+
+.logo-star {
+  position: relative;
+
+  z-index: 2;
+
+  filter: drop-shadow(0 0 10px rgba(239, 90, 111, 0.45))
+    drop-shadow(0 0 24px rgba(239, 90, 111, 0.3));
+
+  animation:
+    logoFloat 5s ease-in-out infinite,
+    logoGlow 4s ease-in-out infinite;
+
+  transition:
+    transform 0.35s ease,
+    filter 0.35s ease;
+}
+
+.logo-medal:hover .logo-star {
+  transform: translateY(-2px) rotate(6deg) scale(1.08);
+}
+.logo-glow {
+  position: absolute;
+
+  width: 90px;
+
+  height: 90px;
+
+  border-radius: 50%;
+
+  background: radial-gradient(rgba(239, 90, 111, 0.22), transparent 70%);
+
+  filter: blur(24px);
+
+  animation: logoGlowPulse 5s ease-in-out infinite;
+
+  pointer-events: none;
+
+  z-index: 1;
+}
+.logo-medal .logo-glow {
+  position: absolute;
+
+  width: 90px;
+
+  height: 90px;
+
+  background: radial-gradient(rgba(239, 90, 111, 0.22), transparent 70%);
+
+  filter: blur(24px);
+
+  animation: logoGlowPulse 5s ease-in-out infinite;
+
+  pointer-events: none;
+}
+/* ============================
+   LOGO TEXT
+============================ */
+
+.logo-text {
+  background: linear-gradient(90deg, #ffffff, #ffdbe2, #ffffff);
+
+  background-size: 200%;
+
+  -webkit-background-clip: text;
+
+  background-clip: text;
+
+  color: transparent;
+
+  animation: logoShine 6s linear infinite;
+}
+
+/* ============================
+   NAVBAR SHINE
+============================ */
+
+.navbar-shine {
+  animation: navbarSweep 8s linear infinite;
+}
+
+/* ============================
+   CTA BUTTON
+============================ */
+
+.launch-btn {
+  background: linear-gradient(135deg, #ff8191, #ef5a6f, #d63b53);
+
+  box-shadow:
+    0 0 18px rgba(239, 90, 111, 0.3),
+    0 0 45px rgba(239, 90, 111, 0.18);
+}
+
+.launch-btn:hover {
+  transform: translateY(-2px) scale(1.04);
+
+  box-shadow:
+    0 0 28px rgba(239, 90, 111, 0.45),
+    0 0 65px rgba(239, 90, 111, 0.25);
+}
+
+/* ============================
+   CTA SHINE
+============================ */
+
+.launch-btn-shine {
+  position: absolute;
+
+  top: 0;
+
+  left: -140%;
+
+  width: 55%;
+
+  height: 100%;
+
+  background: linear-gradient(
+    110deg,
+    transparent,
+    rgba(255, 255, 255, 0.45),
+    transparent
+  );
+
+  transform: skewX(-25deg);
+
+  animation: buttonSweep 4s linear infinite;
+}
+
+/* ===========================================================
+   HOVER
+=========================================================== */
+
+nav:hover {
+  border-color: rgba(239, 90, 111, 0.18);
+
+  box-shadow:
+    0 12px 45px rgba(0, 0, 0, 0.55),
+    0 0 25px rgba(239, 90, 111, 0.1);
+}
+
+/* ===========================================================
+   KEYFRAMES
+=========================================================== */
+
+@keyframes medalPulse {
+  0%,
+  100% {
+    transform: scale(1);
+
+    opacity: 0.45;
+  }
+
+  50% {
+    transform: scale(1.12);
+
+    opacity: 0.95;
+  }
+}
+
+@keyframes starFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes starGlow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 8px rgba(239, 90, 111, 0.55))
+      drop-shadow(0 0 18px rgba(239, 90, 111, 0.3));
+  }
+
+  50% {
+    filter: drop-shadow(0 0 12px rgba(239, 90, 111, 0.85))
+      drop-shadow(0 0 28px rgba(239, 90, 111, 0.55));
+  }
+}
+
+@keyframes logoShine {
+  from {
+    background-position: -200%;
+  }
+
+  to {
+    background-position: 200%;
+  }
+}
+
+@keyframes navbarSweep {
+  from {
+    left: -40%;
+  }
+
+  to {
+    left: 140%;
+  }
+}
+
+@keyframes buttonSweep {
+  0% {
+    left: -140%;
+  }
+
+  40% {
+    left: 160%;
+  }
+
+  100% {
+    left: 160%;
+  }
+}
+@keyframes logoGlowPulse {
+  0%,
+  100% {
+    opacity: 0.45;
+
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.9;
+
+    transform: scale(1.18);
+  }
+}
+
+/* ===========================================================
+   REFERENCE ALIGNMENT STYLES
+   =========================================================== */
+
+.hero-centerpiece {
+  background: linear-gradient(180deg, #181113 0%, #0c080a 100%);
+  border: 1px solid rgba(239, 90, 111, 0.25);
+  box-shadow: 0 0 50px rgba(239, 90, 111, 0.16);
+  backdrop-filter: blur(24px);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.hero-centerpiece:hover {
+  border-color: rgba(239, 90, 111, 0.4);
+  box-shadow: 0 0 65px rgba(239, 90, 111, 0.24);
+}
+
+.card-dark-glow {
+  background: rgba(12, 12, 14, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-dark-glow-hover:hover {
+  border-color: rgba(239, 90, 111, 0.2);
+  box-shadow: 
+    0 12px 30px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(239, 90, 111, 0.08);
+  transform: translateY(-2px);
+}
+
+.glow-pill-red {
+  box-shadow: 0 0 20px rgba(239, 90, 111, 0.35);
+}
+
+.glow-pill-red:hover {
+  box-shadow: 0 0 30px rgba(239, 90, 111, 0.55);
+}
+
+.animate-marquee {
+  animation: marqueeScroll 32s linear infinite;
+}
+

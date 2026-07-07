@@ -1,0 +1,84 @@
+.animatedGradientText {
+  position: relative;
+  display: inline-flex;
+  width: auto;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0;
+  font-weight: 800;
+  overflow: visible;
+  cursor: inherit;
+}
+
+.withBorder {
+  padding: 0.35rem 0.75rem;
+}
+
+.gradientOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: inherit;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.textContent {
+  display: inline-block;
+  position: relative;
+  z-index: 2;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  font-family: "Inter", "Segoe UI", sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+}
+
+.horizontalAnimation {
+  animation-name: gradientHorizontal;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.verticalAnimation {
+  animation-name: gradientVertical;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.diagonalAnimation {
+  animation-name: gradientDiagonal;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes gradientHorizontal {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes gradientVertical {
+  0% {
+    background-position: 50% 0%;
+  }
+  100% {
+    background-position: 50% 100%;
+  }
+}
+
+@keyframes gradientDiagonal {
+  0% {
+    background-position: 0% 0%;
+  }
+  100% {
+    background-position: 100% 100%;
+  }
+}
