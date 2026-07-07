@@ -6,6 +6,7 @@ import Link from "next/link";
 import { useGeassStore } from "@/store/useGeassStore";
 import { Search, Bell, ChevronDown, ChevronRight } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { UserButton } from "@clerk/nextjs";
 
 const BREADCRUMBS: Record<string, { label: string; parent?: { label: string; href: string } }> = {
   "/dashboard":          { label: "Dashboard" },
@@ -98,14 +99,16 @@ export default function TopBar() {
           <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-[#EF5A6F] ring-1 ring-[#030303]" />
         </button>
 
-        {/* Profile */}
-        <button className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-xl border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.07] transition-all">
-          <div className="w-5 h-5 rounded-full bg-gradient-to-br from-[#7C3AED] to-[#EF5A6F] flex items-center justify-center text-[9px] font-black text-white shrink-0">
-            A
-          </div>
-          <span className="text-[12px] font-semibold text-white">Aditya</span>
-          <ChevronDown size={11} className="text-neutral-600" />
-        </button>
+        {/* Profile UserButton */}
+        <div className="flex items-center pl-1 shrink-0">
+          <UserButton
+            appearance={{
+              elements: {
+                avatarBox: "w-7 h-7 rounded-xl border border-white/[0.08] shadow-lg focus:outline-none hover:opacity-80 transition-all",
+              }
+            }}
+          />
+        </div>
       </div>
     </div>
   );
