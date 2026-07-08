@@ -72,6 +72,10 @@ export default function AnalyticsPage() {
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
+    // Read API key + provider saved by the Settings page
+    const apiKey = typeof window !== "undefined" ? localStorage.getItem("geass_ai_api_key") || "" : "";
+    const provider = typeof window !== "undefined" ? localStorage.getItem("geass_ai_provider") || "gemini" : "gemini";
+
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
@@ -82,11 +86,25 @@ export default function AnalyticsPage() {
     setInputValue("");
     setIsLoading(true);
 
+    // Guard: no API key configured
+    if (!apiKey.trim()) {
+      setMessages(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: "⚙️ No API key found. Please go to **Settings → AI Config**, paste your API key, and click Save.",
+        },
+      ]);
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const context = {
-        tasks: workspaceTasks,
-        focusSessions: workspaceSessions,
-        notes: workspaceNotes,
+        tasks: workspaceTasks.map(t => ({ _id: t._id, title: t.title, status: t.status, priority: t.priority, dueDate: t.dueDate })),
+        focusSessions: workspaceSessions.map(s => ({ _id: s._id, duration: s.duration, type: s.type, completedAt: s.completedAt })),
+        notes: workspaceNotes.map(n => ({ _id: n._id, title: n.title, snippet: n.snippet })),
         stats: {
           totalCompletedTasks,
           totalTasksCount,
@@ -101,29 +119,35 @@ export default function AnalyticsPage() {
         body: JSON.stringify({
           prompt: inputValue,
           context,
-          provider: "gemini",
+          provider,
+          apiKey,
         }),
       });
 
-      if (res.ok) {
-        const data = await res.json();
-        const assistantMessage: Message = {
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || `Request failed (${res.status})`);
+      }
+
+      setMessages(prev => [
+        ...prev,
+        {
           id: (Date.now() + 1).toString(),
           role: "assistant",
           content: data.response || "Here's what I found!",
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-      } else {
-        throw new Error("Failed to get response");
-      }
-    } catch (err) {
+        },
+      ]);
+    } catch (err: any) {
       console.error("Chat error:", err);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "Sorry, I couldn't process that right now. Please try again!",
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      setMessages(prev => [
+        ...prev,
+        {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `❌ ${err.message || "Something went wrong. Please try again."}`,
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -154,7 +178,7 @@ export default function AnalyticsPage() {
           { icon: Award, label: "Current Streak", value: `${streak} days`, sub: "focus target streak", color: "#EF5A6F" },
           { icon: Layers, label: "Total Tasks", value: String(totalTasksInWorkspace), sub: "in workspace", color: "#f59e0b" },
         ].map(card => (
-          <div key={card.label} className="bg-[#0e0e10] border border-white/[0.06] rounded-2xl p-4 flex flex-col gap-3">
+          <div key={card.label} className="bg-transparent backdrop-blur-sm border border-white/[0.06] rounded-2xl p-4 flex flex-col gap-3">
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${card.color}15` }}>
                 <card.icon size={13} style={{ color: card.color }} />
@@ -172,7 +196,7 @@ export default function AnalyticsPage() {
       {/* Detail History Panels */}
       <div className="grid grid-cols-2 gap-6">
         {/* Recent Completed Tasks */}
-        <div className="bg-[#0e0e10] border border-white/[0.06] rounded-2xl p-5 space-y-4">
+        <div className="bg-transparent backdrop-blur-sm border border-white/[0.06] rounded-2xl p-5 space-y-4">
           <div className="flex items-center gap-2">
             <CheckCircle2 size={14} className="text-[#22c55e]" />
             <h2 className="text-[13px] font-bold text-white">Recent Completed Tasks</h2>
@@ -193,7 +217,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Completed Focus Sessions Log */}
-        <div className="bg-[#0e0e10] border border-white/[0.06] rounded-2xl p-5 space-y-4">
+        <div className="bg-transparent backdrop-blur-sm border border-white/[0.06] rounded-2xl p-5 space-y-4">
           <div className="flex items-center gap-2">
             <History size={14} className="text-[#7C3AED]" />
             <h2 className="text-[13px] font-bold text-white">Focus Sessions History</h2>

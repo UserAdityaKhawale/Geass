@@ -113,6 +113,13 @@ function SortableCard({
 // ─── Ghost overlay (card shown while dragging) ────────────────────────────────
 
 function DragGhost({ widget }: { widget: WidgetDef }) {
+  // Calculate width based on col-span
+  const spanNumber = parseInt(widget.colSpan.match(/\d+/)?.[0] || '1');
+  const colWidth = 'calc((100% - (3 * 12px)) / 4)';
+  const width = spanNumber === 1 
+    ? colWidth
+    : `calc(${spanNumber} * ${colWidth} + ${(spanNumber - 1) * 12}px)`;
+
   return (
     <motion.div
       initial={{ scale: 1, rotate: 0, boxShadow: "none" }}
@@ -123,8 +130,8 @@ function DragGhost({ widget }: { widget: WidgetDef }) {
           "0 30px 80px rgba(0,0,0,0.6), 0 0 40px rgba(239,90,111,0.15)",
       }}
       transition={{ type: "spring", stiffness: 600, damping: 30 }}
-      className={`${widget.colSpan} pointer-events-none`}
-      style={{ zIndex: 9999 }}
+      className="pointer-events-none"
+      style={{ width, zIndex: 9999 }}
     >
       <div className="overflow-hidden rounded-[1.25rem] border border-[#EF5A6F]/30 bg-[#0e0e10]">
         {/* Shimmer overlay */}

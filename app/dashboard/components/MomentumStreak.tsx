@@ -86,7 +86,7 @@ export default function MomentumStreak() {
   }
 
   return (
-    <div className="h-full bg-[#0e0e10] border border-white/[0.06] rounded-2xl p-4 flex flex-col">
+    <div className="h-full bg-transparent backdrop-blur-sm border border-white/[0.06] rounded-2xl p-4 flex flex-col">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-sm">🔥</span>
         <span className="text-[12px] font-bold text-white">Momentum Streak</span>

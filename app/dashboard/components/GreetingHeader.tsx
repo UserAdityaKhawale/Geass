@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useUser } from "@clerk/nextjs";
 
 const QUOTES = [
   { text: "Discipline is the bridge between goals and accomplishment.", author: "Jim Rohn" },
@@ -17,6 +18,7 @@ function getGreeting() {
 }
 
 export default function GreetingHeader() {
+  const { user, isLoaded } = useUser();
   const [greeting, setGreeting] = useState("Good evening");
   const [quote] = useState(() => QUOTES[Math.floor(Math.random() * QUOTES.length)]);
 
@@ -24,11 +26,13 @@ export default function GreetingHeader() {
     setGreeting(getGreeting());
   }, []);
 
+  const userName = isLoaded && user?.firstName ? user.firstName : "";
+
   return (
     <div className="flex items-start justify-between gap-6">
       <div>
         <h1 className="text-[22px] font-black text-white tracking-tight leading-tight">
-          {greeting}, Aditya! 👋
+          {greeting}{userName && `, ${userName}`}! 👋
         </h1>
         <p className="text-[11px] text-neutral-500 mt-0.5 font-medium">
           Stay focused. Stay consistent. Make it count.

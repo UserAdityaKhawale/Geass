@@ -4,6 +4,7 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import { Plus, Pencil, Trash2, Check, X, ChevronDown } from "lucide-react";
 import { useGeassStore, Task } from "@/store/useGeassStore";
+import { getTodaysTasks } from "@/lib/taskFilters";
 
 const PRIORITY_COLORS: Record<string, string> = {
   high: "#EF5A6F",
@@ -103,9 +104,7 @@ export default function TodaysTasks() {
   const [newPriority, setNewPriority] = useState<Task["priority"]>("medium");
   const [showInput, setShowInput] = useState(false);
 
-  const todayStr = new Date().toISOString().split("T")[0];
-  const workspaceTasks = tasks.filter(t => t.workspaceId === activeWorkspaceId);
-  const todaysTasksList = workspaceTasks.filter(t => t.dueDate?.startsWith(todayStr) || !t.dueDate);
+  const todaysTasksList = getTodaysTasks(tasks, activeWorkspaceId);
 
   const completed = todaysTasksList.filter(t => t.status === "done").length;
   const total = todaysTasksList.length;
@@ -127,7 +126,7 @@ export default function TodaysTasks() {
   };
 
   return (
-    <div className="bg-[#0e0e10] border border-white/[0.06] rounded-2xl p-4 flex flex-col h-full">
+    <div className="bg-transparent backdrop-blur-sm border border-white/[0.06] rounded-2xl p-4 flex flex-col h-full">
       <div className="flex items-center justify-between mb-3 shrink-0">
         <span className="text-[12px] font-bold text-white">Today&apos;s Tasks</span>
         <Link href="/dashboard/tasks" className="text-[10px] text-[#EF5A6F] hover:text-[#ff8b98] font-semibold transition-colors">

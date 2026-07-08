@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
@@ -55,11 +55,28 @@ export default function TopBar() {
   const crumb = BREADCRUMBS[pathname] ?? { label: "Dashboard" };
   const activeWs = workspaces.find((w) => w._id === activeWorkspaceId);
   const [openSelector, setOpenSelector] = useState(false);
+  const selectorRef = useRef<HTMLDivElement>(null);
+
+  // Click-outside handler
+  useEffect(() => {
+    if (!openSelector) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (selectorRef.current && !selectorRef.current.contains(event.target as Node)) {
+        setOpenSelector(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [openSelector]);
 
   return (
     <div className="h-12 flex items-center gap-4 px-4 border-b border-[var(--topbar-border)] bg-[var(--topbar-bg)] shrink-0">
       {/* Workspace selector badge */}
-      <div className="relative flex items-center gap-1.5 shrink-0">
+      <div ref={selectorRef} className="relative flex items-center gap-1.5 shrink-0">
         <button
           onClick={() => setOpenSelector((o) => !o)}
           className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"

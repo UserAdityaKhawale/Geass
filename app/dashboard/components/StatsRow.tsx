@@ -73,7 +73,7 @@ export default function StatsRow() {
   return (
     <div className="grid grid-cols-4 gap-3">
       {stats.map(({ icon: Icon, label, value, sub, trend, up, color, data }) => (
-        <div key={label} className="bg-[#0e0e10] border border-white/[0.06] rounded-2xl p-3.5 flex flex-col gap-2.5 hover:border-white/10 transition-colors">
+        <div key={label} className="bg-transparent backdrop-blur-sm border border-white/[0.06] rounded-2xl p-3.5 flex flex-col gap-2.5 hover:border-white/10 transition-colors">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${color}18` }}>
               <Icon size={13} style={{ color }} />

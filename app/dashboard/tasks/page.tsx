@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { useGeassStore, Task } from "@/store/useGeassStore";
 import {
   Plus, CheckSquare, Star, Calendar, CheckCircle2,
-  Inbox, Clock, Pencil, Trash2, Check, X, ChevronDown
+  Inbox, Clock, Pencil, Trash2, Check, X, ChevronDown, ChevronUp
 } from "lucide-react";
 
 type FilterType = "all" | "today" | "high" | "completed";
@@ -18,11 +18,13 @@ const PRIORITY_COLORS: Record<string, string> = {
 const PRIORITY_ORDER: Task["priority"][] = ["low", "medium", "high"];
 
 function EditableTaskRow({ task }: { task: Task }) {
-  const { updateTask, deleteTask } = useGeassStore();
-  const [editing, setEditing]     = useState(false);
-  const [editTitle, setEditTitle] = useState(task.title);
-  const [editDue, setEditDue]     = useState(task.dueDate?.split("T")[0] ?? "");
-  const [confirm, setConfirm]     = useState(false);
+  const { updateTask, deleteTask, addSubtask, toggleSubtask, deleteSubtask } = useGeassStore();
+  const [editing, setEditing]           = useState(false);
+  const [editTitle, setEditTitle]       = useState(task.title);
+  const [editDue, setEditDue]           = useState(task.dueDate?.split("T")[0] ?? "");
+  const [confirm, setConfirm]           = useState(false);
+  const [expanded, setExpanded]         = useState(false);
+  const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
 
   const commit = () => {
     const trimmed = editTitle.trim();
@@ -40,118 +42,204 @@ function EditableTaskRow({ task }: { task: Task }) {
   };
 
   return (
-    <div className={`flex items-center justify-between p-3 rounded-xl border transition-all group ${
+    <div className={`p-3 rounded-xl border transition-all group ${
       editing
         ? "border-[#EF5A6F]/30 bg-[#0e0e10]"
         : "border-white/[0.04] bg-[#0e0e10] hover:bg-white/[0.02] hover:border-white/[0.08]"
     }`}>
-      <div className="flex items-center gap-3 min-w-0 flex-1">
-        {/* Checkbox */}
-        <button
-          onClick={() => updateTask(task._id, { status: task.status === "done" ? "todo" : "done" })}
-          className={`w-4 h-4 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
-            task.status === "done" ? "border-[#22c55e] bg-[#22c55e]" : "border-white/20 hover:border-white/40"
-          }`}
-        >
-          {task.status === "done" && (
-            <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-            </svg>
-          )}
-        </button>
+      {/* Top row */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          {/* Checkbox */}
+          <button
+            onClick={() => updateTask(task._id, { status: task.status === "done" ? "todo" : "done" })}
+            className={`w-4 h-4 rounded-md border-2 flex items-center justify-center shrink-0 transition-all ${
+              task.status === "done" ? "border-[#22c55e] bg-[#22c55e]" : "border-white/20 hover:border-white/40"
+            }`}
+          >
+            {task.status === "done" && (
+              <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </button>
 
-        <div className="min-w-0 flex-1">
-          {editing ? (
-            <div className="space-y-1.5">
-              <input
-                autoFocus
-                value={editTitle}
-                onChange={e => setEditTitle(e.target.value)}
-                onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }}
-                className="w-full bg-white/[0.05] border border-[#EF5A6F]/40 rounded-lg px-2 py-1 text-[12px] text-white focus:outline-none"
-              />
-              <div className="flex items-center gap-2">
-                <span className="text-[9px] text-neutral-600 font-mono">Due:</span>
+          <div className="min-w-0 flex-1">
+            {editing ? (
+              <div className="space-y-1.5">
                 <input
-                  type="date"
-                  value={editDue}
-                  onChange={e => setEditDue(e.target.value)}
-                  className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-0.5 text-[9px] text-neutral-300 focus:outline-none focus:border-[#EF5A6F]/40 [color-scheme:dark]"
+                  autoFocus
+                  value={editTitle}
+                  onChange={e => setEditTitle(e.target.value)}
+                  onKeyDown={e => { if (e.key === "Enter") commit(); if (e.key === "Escape") setEditing(false); }}
+                  className="w-full bg-white/[0.05] border border-[#EF5A6F]/40 rounded-lg px-2 py-1 text-[12px] text-white focus:outline-none"
                 />
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] text-neutral-600 font-mono">Due:</span>
+                  <input
+                    type="date"
+                    value={editDue}
+                    onChange={e => setEditDue(e.target.value)}
+                    className="bg-white/[0.04] border border-white/[0.08] rounded-lg px-2 py-0.5 text-[9px] text-neutral-300 focus:outline-none focus:border-[#EF5A6F]/40 [color-scheme:dark]"
+                  />
+                </div>
               </div>
+            ) : (
+              <>
+                <p
+                  onDoubleClick={() => setEditing(true)}
+                  className={`text-[12px] font-semibold truncate cursor-text ${
+                    task.status === "done" ? "line-through text-neutral-700" : "text-neutral-200"
+                  }`}
+                  title="Double-click to edit"
+                >
+                  {task.title}
+                </p>
+                {task.dueDate && (
+                  <div className="flex items-center gap-1.5 text-[9px] text-neutral-600 font-mono mt-0.5">
+                    <Calendar size={9} />
+                    Due: {task.dueDate.split("T")[0]}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 shrink-0 ml-2">
+          {/* Expand/collapse button */}
+          {!editing && !confirm && (
+            <button
+              onClick={e => { e.stopPropagation(); setExpanded(x => !x); }}
+              className="text-neutral-600 hover:text-neutral-300 p-1 rounded-lg hover:bg-white/[0.04] transition-all shrink-0"
+              title={expanded ? "Collapse" : "Expand details"}
+            >
+              {expanded ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+            </button>
+          )}
+
+          {/* Priority pill — click to cycle */}
+          <button
+            onClick={cyclePriority}
+            title="Click to change priority"
+            className="text-[9px] font-bold px-2 py-0.5 rounded-md uppercase transition-all hover:scale-105 active:scale-95"
+            style={{ color: PRIORITY_COLORS[task.priority], backgroundColor: `${PRIORITY_COLORS[task.priority]}18` }}
+          >
+            {task.priority}
+          </button>
+
+          {/* Edit / confirm / cancel / delete */}
+          {editing ? (
+            <div className="flex items-center gap-1">
+              <button onClick={commit} className="text-[#22c55e] hover:bg-[#22c55e]/10 p-1.5 rounded-lg transition-all" title="Save">
+                <Check size={12} />
+              </button>
+              <button onClick={() => setEditing(false)} className="text-neutral-500 hover:bg-white/[0.06] p-1.5 rounded-lg transition-all" title="Cancel">
+                <X size={12} />
+              </button>
+            </div>
+          ) : confirm ? (
+            <div className="flex items-center gap-1">
+              <span className="text-[9px] text-[#EF5A6F] font-mono mr-1">Delete?</span>
+              <button onClick={() => deleteTask(task._id)} className="text-[#EF5A6F] hover:bg-[#EF5A6F]/10 p-1.5 rounded-lg transition-all">
+                <Check size={12} />
+              </button>
+              <button onClick={() => setConfirm(false)} className="text-neutral-500 hover:bg-white/[0.06] p-1.5 rounded-lg transition-all">
+                <X size={12} />
+              </button>
             </div>
           ) : (
-            <>
-              <p
-                onDoubleClick={() => setEditing(true)}
-                className={`text-[12px] font-semibold truncate cursor-text ${
-                  task.status === "done" ? "line-through text-neutral-700" : "text-neutral-200"
-                }`}
-                title="Double-click to edit"
+            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => setEditing(true)}
+                className="text-neutral-600 hover:text-white hover:bg-white/[0.06] p-1.5 rounded-lg transition-all"
+                title="Edit task"
               >
-                {task.title}
-              </p>
-              {task.dueDate && (
-                <div className="flex items-center gap-1.5 text-[9px] text-neutral-600 font-mono mt-0.5">
-                  <Calendar size={9} />
-                  Due: {task.dueDate.split("T")[0]}
-                </div>
-              )}
-            </>
+                <Pencil size={12} />
+              </button>
+              <button
+                onClick={() => setConfirm(true)}
+                className="text-neutral-600 hover:text-[#EF5A6F] hover:bg-[#EF5A6F]/10 p-1.5 rounded-lg transition-all"
+                title="Delete task"
+              >
+                <Trash2 size={12} />
+              </button>
+            </div>
           )}
         </div>
       </div>
 
-      <div className="flex items-center gap-2 shrink-0 ml-2">
-        {/* Priority pill — click to cycle */}
-        <button
-          onClick={cyclePriority}
-          title="Click to change priority"
-          className="text-[9px] font-bold px-2 py-0.5 rounded-md uppercase transition-all hover:scale-105 active:scale-95"
-          style={{ color: PRIORITY_COLORS[task.priority], backgroundColor: `${PRIORITY_COLORS[task.priority]}18` }}
-        >
-          {task.priority}
-        </button>
+      {/* Expanded panel */}
+      {expanded && (
+        <div className="mt-2 pt-2 border-t border-white/[0.05] space-y-3">
+          {/* Description */}
+          <div>
+            <label className="text-[9px] font-mono uppercase text-neutral-600 mb-1 block">Description</label>
+            <textarea
+              value={task.description || ""}
+              onChange={e => updateTask(task._id, { description: e.target.value })}
+              placeholder="Add a note or description..."
+              rows={2}
+              className="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg px-2.5 py-1.5 text-[11px] text-neutral-300 placeholder:text-neutral-700 focus:outline-none focus:border-white/[0.15] resize-none"
+            />
+          </div>
 
-        {/* Edit / confirm / cancel / delete */}
-        {editing ? (
-          <div className="flex items-center gap-1">
-            <button onClick={commit} className="text-[#22c55e] hover:bg-[#22c55e]/10 p-1.5 rounded-lg transition-all" title="Save">
-              <Check size={12} />
-            </button>
-            <button onClick={() => setEditing(false)} className="text-neutral-500 hover:bg-white/[0.06] p-1.5 rounded-lg transition-all" title="Cancel">
-              <X size={12} />
-            </button>
+          {/* Subtasks */}
+          <div>
+            <label className="text-[9px] font-mono uppercase text-neutral-600 mb-2 block">
+              Subtasks{(task.subtasks?.length ?? 0) > 0 && ` (${task.subtasks.filter(s => s.completed).length}/${task.subtasks.length})`}
+            </label>
+            <div className="space-y-1">
+              {(task.subtasks || []).map(st => (
+                <div key={st._id} className="flex items-center gap-2 group/st">
+                  <button
+                    onClick={() => toggleSubtask(task._id, st._id)}
+                    className={`w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 transition-all ${
+                      st.completed ? "border-[#22c55e] bg-[#22c55e]" : "border-white/20"
+                    }`}
+                  >
+                    {st.completed && (
+                      <svg className="w-2 h-2 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                  <span className={`flex-1 text-[11px] ${st.completed ? "line-through text-neutral-600" : "text-neutral-300"}`}>
+                    {st.title}
+                  </span>
+                  <button
+                    onClick={() => deleteSubtask(task._id, st._id)}
+                    className="opacity-0 group-hover/st:opacity-100 text-neutral-700 hover:text-[#EF5A6F] transition-all p-0.5 rounded"
+                  >
+                    <X size={10} />
+                  </button>
+                </div>
+              ))}
+            </div>
+            {/* Add subtask input */}
+            <div className="flex items-center gap-2 mt-2">
+              <Plus size={10} className="text-neutral-600 shrink-0" />
+              <input
+                value={newSubtaskTitle}
+                onChange={e => setNewSubtaskTitle(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === "Enter" && newSubtaskTitle.trim()) {
+                    addSubtask(task._id, {
+                      _id: `st-${Date.now()}`,
+                      title: newSubtaskTitle.trim(),
+                      completed: false,
+                      createdAt: new Date().toISOString(),
+                    });
+                    setNewSubtaskTitle("");
+                  }
+                }}
+                placeholder="Add a step... (Enter)"
+                className="flex-1 bg-transparent text-[11px] text-white placeholder:text-neutral-700 outline-none border-b border-white/[0.06] focus:border-white/[0.15] pb-0.5 transition-colors"
+              />
+            </div>
           </div>
-        ) : confirm ? (
-          <div className="flex items-center gap-1">
-            <span className="text-[9px] text-[#EF5A6F] font-mono mr-1">Delete?</span>
-            <button onClick={() => deleteTask(task._id)} className="text-[#EF5A6F] hover:bg-[#EF5A6F]/10 p-1.5 rounded-lg transition-all">
-              <Check size={12} />
-            </button>
-            <button onClick={() => setConfirm(false)} className="text-neutral-500 hover:bg-white/[0.06] p-1.5 rounded-lg transition-all">
-              <X size={12} />
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={() => setEditing(true)}
-              className="text-neutral-600 hover:text-white hover:bg-white/[0.06] p-1.5 rounded-lg transition-all"
-              title="Edit task"
-            >
-              <Pencil size={12} />
-            </button>
-            <button
-              onClick={() => setConfirm(true)}
-              className="text-neutral-600 hover:text-[#EF5A6F] hover:bg-[#EF5A6F]/10 p-1.5 rounded-lg transition-all"
-              title="Delete task"
-            >
-              <Trash2 size={12} />
-            </button>
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -190,6 +278,8 @@ export default function TasksPage() {
       status: "todo",
       dueDate: new Date(newDueDate).toISOString(),
       orderIndex: workspaceTasks.length,
+      subtasks: [],
+      attachments: [],
     });
     setNewTaskTitle("");
   };
@@ -303,7 +393,7 @@ export default function TasksPage() {
 
         {/* Hint */}
         <p className="text-[9px] text-neutral-700 font-mono shrink-0">
-          💡 Double-click task name to edit • Click priority badge to cycle • Hover to reveal edit/delete
+          💡 Double-click task name to edit • Click priority badge to cycle • Hover to reveal edit/delete • Click ↕ to expand details
         </p>
 
         {/* Task list */}

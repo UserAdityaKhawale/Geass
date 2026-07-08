@@ -33,7 +33,7 @@ export default function QuickNotes() {
   const timeStr = now.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <div className="bg-[#161200] border border-[#f59e0b]/12 rounded-2xl p-4 flex flex-col gap-3 h-full">
+    <div className="bg-transparent backdrop-blur-sm border border-[#f59e0b]/12 rounded-2xl p-4 flex flex-col gap-3 h-full">
       <div className="flex items-center justify-between shrink-0">
         <span className="text-[12px] font-bold text-[#fbbf24]">📝 Quick Notes</span>
         <div className="flex items-center gap-2">

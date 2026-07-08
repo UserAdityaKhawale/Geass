@@ -147,11 +147,12 @@ export default function DashboardPage() {
         className="min-h-[320px]"
       />
 
-      {/* ── Row 3: Pomodoro | Music | Projects | Notes  ── draggable ── */}
+      {/* ── Row 3: Pomodoro | Music | Notes  ── draggable ── */}
       <BentoDragGrid
         widgets={ROW3_WIDGETS}
         storageKey="geass-bento-row3"
-        gridClass="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-4"
+        gridClass="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"
+        className="min-h-[320px]"
       />
 
       {/* ── Row 4: Activity | Analytics  ──────────── draggable ── */}

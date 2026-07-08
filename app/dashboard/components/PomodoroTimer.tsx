@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import { Minus, Plus, Settings, X } from "lucide-react";
 import { useGeassStore } from "@/store/useGeassStore";
 
@@ -11,83 +11,54 @@ const PRESETS = [
 ];
 
 export default function PomodoroTimer() {
-  const { activeWorkspaceId, addFocusSession } = useGeassStore();
-  const [idx, setIdx]             = useState(0);
-  const [customMins, setCustomMins] = useState<number | null>(null); // null = use preset
-  const [secs, setSecs]           = useState(PRESETS[0].mins * 60);
-  const [running, setRunning]     = useState(false);
-  const [count, setCount]         = useState(1);
+  const { activeWorkspaceId, addFocusSession, timerState, setTimerSeconds, setTimerSessionIndex, setTimerCustomMinutes, toggleTimer } = useGeassStore();
   const [showSettings, setShowSettings] = useState(false);
   const [settingInput, setSettingInput] = useState("");
-  const ref                       = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const sess = PRESETS[idx];
-  const activeMins = customMins !== null ? customMins : sess.mins;
-
-  useEffect(() => {
-    if (running) {
-      ref.current = setInterval(() => {
-        setSecs(s => {
-          if (s <= 1) {
-            setRunning(false);
-            setCount(c => c + 1);
-            if (sess.label === "Focus" && activeWorkspaceId) {
-              addFocusSession({
-                _id: `focus-${Date.now()}`,
-                workspaceId: activeWorkspaceId,
-                duration: activeMins,
-                type: "pomodoro",
-                completedAt: new Date().toISOString(),
-              });
-            }
-            return activeMins * 60;
-          }
-          return s - 1;
-        });
-      }, 1000);
-    } else {
-      if (ref.current) clearInterval(ref.current);
-    }
-    return () => { if (ref.current) clearInterval(ref.current); };
-  }, [running, sess, activeWorkspaceId, addFocusSession, activeMins]);
+  const { running, seconds, sessionIndex, customMinutes, completedCount } = timerState;
+  const sess = PRESETS[sessionIndex];
+  const activeMins = customMinutes !== null ? customMinutes : sess.mins;
 
   const switchSession = (i: number) => {
-    setRunning(false);
-    setIdx(i);
-    setCustomMins(null);
-    setSecs(PRESETS[i].mins * 60);
+    const store = useGeassStore.getState();
+    store.stopTimer();
+    setTimerSessionIndex(i);
+    setTimerCustomMinutes(null);
+    setTimerSeconds(PRESETS[i].mins * 60);
     setShowSettings(false);
   };
 
   const adjustTime = (delta: number) => {
-    const cur = Math.floor(secs / 60);
+    const cur = Math.floor(seconds / 60);
     const next = Math.max(1, Math.min(120, cur + delta));
-    setCustomMins(next);
-    setSecs(next * 60);
-    setRunning(false);
+    setTimerCustomMinutes(next);
+    setTimerSeconds(next * 60);
+    const store = useGeassStore.getState();
+    store.stopTimer();
   };
 
   const applyCustomMins = () => {
     const parsed = parseInt(settingInput, 10);
     if (!isNaN(parsed) && parsed >= 1 && parsed <= 120) {
-      setCustomMins(parsed);
-      setSecs(parsed * 60);
-      setRunning(false);
+      setTimerCustomMinutes(parsed);
+      setTimerSeconds(parsed * 60);
+      const store = useGeassStore.getState();
+      store.stopTimer();
     }
     setShowSettings(false);
     setSettingInput("");
   };
 
-  const mm    = String(Math.floor(secs / 60)).padStart(2, "0");
-  const ss    = String(secs % 60).padStart(2, "0");
+  const mm    = String(Math.floor(seconds / 60)).padStart(2, "0");
+  const ss    = String(seconds % 60).padStart(2, "0");
   const total = activeMins * 60;
-  const prog  = (total - secs) / total;
+  const prog  = (total - seconds) / total;
   const R     = 52;
   const circ  = 2 * Math.PI * R;
   const dash  = circ * (1 - prog);
 
   return (
-    <div className="bg-[#0e0e10] border border-white/[0.06] rounded-2xl p-4 flex flex-col items-center gap-3 relative">
+    <div className="bg-transparent backdrop-blur-sm border border-white/[0.06] rounded-2xl p-4 flex flex-col items-center gap-3 relative">
       {/* Header */}
       <div className="w-full flex items-center justify-between">
         <span className="text-[12px] font-bold text-white">Pomodoro</span>
@@ -148,8 +119,8 @@ export default function PomodoroTimer() {
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-[26px] font-black text-white tabular-nums tracking-tight">{mm}:{ss}</span>
           <span className="text-[10px] text-neutral-500 font-semibold">{sess.label}</span>
-          {customMins !== null && (
-            <span className="text-[8px] text-[#EF5A6F] font-mono mt-0.5">custom {customMins}m</span>
+          {customMinutes !== null && (
+            <span className="text-[8px] text-[#EF5A6F] font-mono mt-0.5">custom {customMinutes}m</span>
           )}
         </div>
       </div>
@@ -175,10 +146,10 @@ export default function PomodoroTimer() {
         </button>
       </div>
 
-      <p className="text-[10px] text-neutral-600">#{count} of 4</p>
+      <p className="text-[10px] text-neutral-600">#{completedCount} of 4</p>
 
       <button
-        onClick={() => setRunning(r => !r)}
+        onClick={toggleTimer}
         className="w-full py-2.5 rounded-xl text-[12px] font-bold text-white transition-all duration-200 active:scale-95"
         style={{ backgroundColor: sess.color, boxShadow: `0 6px 24px ${sess.color}40` }}
       >
@@ -191,9 +162,9 @@ export default function PomodoroTimer() {
           <button
             key={s.label}
             onClick={() => switchSession(i)}
-            className={`py-2 rounded-xl transition-all text-center ${idx === i ? "bg-white/[0.08] border border-white/[0.08]" : "hover:bg-white/[0.04]"}`}
+            className={`py-2 rounded-xl transition-all text-center ${sessionIndex === i ? "bg-white/[0.08] border border-white/[0.08]" : "hover:bg-white/[0.04]"}`}
           >
-            <p className="text-[10px] font-bold" style={{ color: idx === i ? s.color : "#6b7280" }}>{s.short}</p>
+            <p className="text-[10px] font-bold" style={{ color: sessionIndex === i ? s.color : "#6b7280" }}>{s.short}</p>
             <p className="text-[9px] text-neutral-700">{String(s.mins).padStart(2, "0")}:00</p>
           </button>
         ))}

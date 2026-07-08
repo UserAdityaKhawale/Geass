@@ -20,6 +20,8 @@ import {
   Trash2,
   X,
   Loader2,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 // SVG icons for social links
@@ -54,10 +56,15 @@ const NAV_ITEMS = [
   { icon: Settings, label: "Settings", href: "/dashboard/settings" },
 ];
 
-export default function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void;
+}
+
+export default function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname();
   const { workspaces, activeWorkspaceId, setActiveWorkspace, addWorkspace, deleteWorkspace } =
     useGeassStore();
+  const [collapsed, setCollapsed] = useState(false);
   const [showAddWs, setShowAddWs] = useState(false);
   const [newWsName, setNewWsName] = useState("");
   const [newWsIcon, setNewWsIcon] = useState("🚀");
@@ -126,26 +133,46 @@ export default function Sidebar() {
   };
 
   return (
-    <div className="flex h-full w-full flex-col bg-[#0a0a0c] shrink-0 lg:w-[220px]">
-      {/* Logo */}
-      <div className="flex items-center gap-2 px-4 h-12 border-b border-white/[0.05] shrink-0">
-        <Link href="/" className="flex items-center gap-2">
+    <div className={`flex h-full flex-col bg-[#0a0a0c] shrink-0 transition-all duration-300 ease-in-out ${collapsed ? "lg:w-[60px]" : "lg:w-[220px]"} w-full`}>
+      {/* Logo + toggle row */}
+      <div className="flex items-center h-12 border-b border-white/[0.05] shrink-0 px-4">
+        {/* Mobile close button */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="lg:hidden mr-2 text-neutral-500 hover:text-white transition-colors p-1 rounded-lg hover:bg-white/[0.06]"
+            aria-label="Close sidebar"
+          >
+            <X size={16} />
+          </button>
+        )}
+
+        <Link href="/" className={`flex items-center gap-2 flex-1 min-w-0 ${collapsed ? "lg:justify-center" : ""}`}>
           <img
             src="/geass-logo.png"
             alt="Geass"
-            className="h-5 w-auto object-contain drop-shadow-[0_0_6px_rgba(239,90,111,0.4)]"
+            className="h-5 w-auto object-contain drop-shadow-[0_0_6px_rgba(239,90,111,0.4)] shrink-0"
           />
-          <span className="text-[13px] font-black tracking-widest text-white uppercase">
+          <span className={`text-[13px] font-black tracking-widest text-white uppercase ${collapsed ? "lg:hidden" : ""}`}>
             Geass
           </span>
         </Link>
+
+        {/* Desktop collapse toggle */}
+        <button
+          onClick={() => setCollapsed(c => !c)}
+          className="hidden lg:flex items-center justify-center w-6 h-6 rounded-lg text-neutral-600 hover:text-white hover:bg-white/[0.06] transition-all shrink-0"
+          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+        >
+          {collapsed ? <ChevronRight size={13} /> : <ChevronLeft size={13} />}
+        </button>
       </div>
 
       {/* Scrollable body */}
       <div className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
         {/* Primary nav */}
         {NAV_ITEMS.map(({ icon: Icon, label, href }) => {
-          // Exact match for root dashboard, startsWith for all sub-routes
           const active =
             href === "/dashboard"
               ? pathname === "/dashboard"
@@ -154,27 +181,32 @@ export default function Sidebar() {
             <Link
               key={label}
               href={href}
+              onClick={onClose}
+              title={collapsed ? label : undefined}
               className={`flex items-center gap-3 rounded-xl border px-3 py-2 text-[12px] font-semibold transition-all duration-200 ${
+                collapsed ? "lg:justify-center lg:px-2" : ""
+              } ${
                 active
                   ? "border-[#EF5A6F]/20 bg-[#EF5A6F]/10 text-[#EF5A6F]"
                   : "border-transparent text-neutral-500 hover:-translate-y-0.5 hover:border-white/[0.08] hover:bg-white/[0.04] hover:text-neutral-200"
               }`}
             >
-              <Icon size={14} />
-              {label}
+              <Icon size={14} className="shrink-0" />
+              <span className={collapsed ? "lg:hidden" : ""}>{label}</span>
             </Link>
           );
         })}
 
         {/* Workspaces */}
         <div className="pt-4 pb-1">
-          <div className="flex items-center justify-between px-3 mb-2">
-            <span className="text-[9px] font-mono uppercase tracking-widest text-neutral-600">
+          <div className={`flex items-center justify-between px-3 mb-2 ${collapsed ? "lg:justify-center lg:px-0" : ""}`}>
+            <span className={`text-[9px] font-mono uppercase tracking-widest text-neutral-600 ${collapsed ? "lg:hidden" : ""}`}>
               Workspaces
             </span>
             <button
               onClick={() => setShowAddWs((o) => !o)}
               className="text-neutral-600 hover:text-white transition-colors rounded p-0.5"
+              title="New workspace"
             >
               <Plus size={11} />
             </button>
@@ -184,6 +216,8 @@ export default function Sidebar() {
             <div
               key={ws._id}
               className={`flex w-full items-center gap-2 rounded-xl px-3 py-2 text-[12px] font-semibold transition-all duration-200 group ${
+                collapsed ? "lg:justify-center lg:px-2" : ""
+              } ${
                 activeWorkspaceId === ws._id
                   ? "bg-white/[0.06] text-white"
                   : "text-neutral-600 hover:-translate-y-0.5 hover:bg-white/[0.03] hover:text-neutral-300"
@@ -191,7 +225,8 @@ export default function Sidebar() {
             >
               <button
                 onClick={() => setActiveWorkspace(ws._id)}
-                className="flex items-center gap-3 flex-1 min-w-0"
+                className={`flex items-center gap-3 flex-1 min-w-0 ${collapsed ? "lg:justify-center" : ""}`}
+                title={collapsed ? ws.name : undefined}
               >
                 <span
                   className="text-sm shrink-0"
@@ -201,22 +236,23 @@ export default function Sidebar() {
                 >
                   {ws.icon || "📁"}
                 </span>
-                <span className="truncate">{ws.name}</span>
+                <span className={`truncate ${collapsed ? "lg:hidden" : ""}`}>{ws.name}</span>
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setShowDeleteConfirm(ws._id);
                 }}
-                className="opacity-0 group-hover:opacity-100 text-neutral-600 hover:text-red-400 transition-all p-1 rounded-lg hover:bg-white/[0.05]"
+                className={`opacity-0 group-hover:opacity-100 flex items-center justify-center w-6 h-6 rounded-lg text-red-400/70 hover:text-red-400 hover:bg-red-500/15 border border-transparent hover:border-red-500/20 transition-all shrink-0 ${collapsed ? "lg:hidden" : ""}`}
                 title="Delete workspace"
+                aria-label={`Delete ${ws.name}`}
               >
-                <Trash2 size={12} />
+                <Trash2 size={11} />
               </button>
             </div>
           ))}
 
-          {showAddWs && (
+          {showAddWs && !collapsed && (
             <div className="mt-2 p-2 bg-white/[0.02] border border-white/[0.06] rounded-xl space-y-2">
               {error && (
                 <div className="p-2 bg-red-500/10 border border-red-500/20 rounded-lg">
@@ -250,17 +286,25 @@ export default function Sidebar() {
                   onChange={(e) => setNewWsColor(e.target.value)}
                   className="w-6 h-6 border-0 bg-transparent cursor-pointer rounded overflow-hidden shrink-0"
                 />
-                <button
-                  onClick={handleCreateWorkspace}
-                  className="bg-[#EF5A6F] text-white font-bold text-[10px] px-2.5 py-1 rounded-lg hover:bg-[#d94a5f] transition-all"
-                >
-                  Create
-                </button>
+                <div className="flex gap-1 ml-auto">
+                  <button
+                    onClick={() => { setShowAddWs(false); setNewWsName(""); setError(null); }}
+                    className="text-neutral-500 hover:text-neutral-200 text-[10px] font-bold px-2 py-1 rounded-lg hover:bg-white/[0.05] border border-white/[0.06] transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleCreateWorkspace}
+                    className="bg-[#EF5A6F] text-white font-bold text-[10px] px-2.5 py-1 rounded-lg hover:bg-[#d94a5f] transition-all"
+                  >
+                    Create
+                  </button>
+                </div>
               </div>
             </div>
           )}
 
-          {!showAddWs && (
+          {!showAddWs && !collapsed && (
             <button
               onClick={() => setShowAddWs(true)}
               className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-[11px] text-neutral-700 hover:text-neutral-400 transition-colors mt-1"
@@ -273,76 +317,101 @@ export default function Sidebar() {
       </div>
 
       {/* Delete Confirmation Modal */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-[#0e0e10] border border-white/10 rounded-2xl p-6 max-w-md w-full mx-4">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                <Trash2 size={20} className="text-red-400" />
+      {showDeleteConfirm && (() => {
+        const wsToDelete = workspaces.find(w => w._id === showDeleteConfirm);
+        return (
+          <div
+            className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            onClick={() => setShowDeleteConfirm(null)}
+          >
+            <div
+              className="bg-[#0e0e10] border border-red-500/20 rounded-2xl p-6 max-w-sm w-full shadow-2xl shadow-red-900/20"
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div className="flex items-start gap-3 mb-5">
+                <div className="w-10 h-10 rounded-xl bg-red-500/15 border border-red-500/20 flex items-center justify-center shrink-0">
+                  <Trash2 size={18} className="text-red-400" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-[15px] font-black text-white leading-tight">Delete workspace?</h3>
+                  {wsToDelete && (
+                    <p className="text-[11px] text-neutral-500 mt-0.5">
+                      <span
+                        className="font-bold"
+                        style={{ color: wsToDelete.color }}
+                      >
+                        {wsToDelete.icon} {wsToDelete.name}
+                      </span>
+                      {" "}will be permanently removed
+                    </p>
+                  )}
+                </div>
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-white">Delete Workspace?</h3>
-                <p className="text-sm text-neutral-400">This action cannot be undone</p>
-              </div>
-            </div>
 
-            <div className="space-y-3 mb-6">
-              <div className="p-3 bg-white/5 rounded-xl">
-                <p className="text-sm text-neutral-300">
-                  This will permanently delete the workspace and all its data including:
-                </p>
-                <ul className="text-sm text-neutral-400 mt-2 space-y-1 list-disc list-inside">
-                  <li>All tasks</li>
-                  <li>All notes</li>
-                  <li>All focus sessions</li>
-                  <li>All time blocks</li>
-                </ul>
+              {/* Warning list */}
+              <div className="bg-red-500/5 border border-red-500/10 rounded-xl p-3 mb-5 space-y-1.5">
+                <p className="text-[10px] font-bold text-red-400 uppercase tracking-wider mb-2">This will delete:</p>
+                {["All tasks", "All notes", "All focus sessions", "All time blocks"].map(item => (
+                  <div key={item} className="flex items-center gap-2">
+                    <div className="w-1 h-1 rounded-full bg-red-400/50 shrink-0" />
+                    <span className="text-[11px] text-neutral-400">{item}</span>
+                  </div>
+                ))}
               </div>
-            </div>
 
-            <div className="flex gap-3">
-              <button
-                onClick={() => setShowDeleteConfirm(null)}
-                className="flex-1 py-2 px-4 rounded-xl border border-white/10 text-white text-sm font-bold hover:bg-white/5 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleDeleteWorkspace(showDeleteConfirm)}
-                disabled={isDeleting}
-                className="flex-1 py-2 px-4 rounded-xl bg-red-500 text-white text-sm font-bold hover:bg-red-600 transition-colors flex items-center justify-center gap-2"
-              >
-                {isDeleting ? (
-                  <>
-                    <Loader2 size={16} className="animate-spin" />
-                    Deleting...
-                  </>
-                ) : (
-                  "Delete Workspace"
-                )}
-              </button>
+              {/* Actions */}
+              <div className="flex gap-2.5">
+                <button
+                  onClick={() => setShowDeleteConfirm(null)}
+                  className="flex-1 py-2.5 px-4 rounded-xl border border-white/[0.08] bg-white/[0.02] text-neutral-300 text-[12px] font-bold hover:bg-white/[0.06] hover:text-white transition-all"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => handleDeleteWorkspace(showDeleteConfirm)}
+                  disabled={isDeleting}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-red-500/90 hover:bg-red-500 text-white text-[12px] font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed shadow-lg shadow-red-900/30"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" />
+                      Deleting...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 size={13} />
+                      Delete
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Bottom actions */}
       <div className="shrink-0 space-y-1 border-t border-white/[0.05] px-3 py-3">
         <Link
           href="/help"
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[12px] font-semibold text-neutral-600 transition-all hover:-translate-y-0.5 hover:bg-white/[0.04] hover:text-neutral-300"
+          onClick={onClose}
+          title={collapsed ? "Help Center" : undefined}
+          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[12px] font-semibold text-neutral-600 transition-all hover:-translate-y-0.5 hover:bg-white/[0.04] hover:text-neutral-300 ${collapsed ? "lg:justify-center lg:px-2" : ""}`}
         >
-          <HelpCircle size={14} />
-          Help Center
+          <HelpCircle size={14} className="shrink-0" />
+          <span className={collapsed ? "lg:hidden" : ""}>Help Center</span>
         </Link>
         <Link
           href="/dashboard/profile"
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[12px] font-semibold text-neutral-600 transition-all hover:-translate-y-0.5 hover:bg-white/[0.04] hover:text-neutral-300"
+          onClick={onClose}
+          title={collapsed ? "Profile Setup" : undefined}
+          className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-[12px] font-semibold text-neutral-600 transition-all hover:-translate-y-0.5 hover:bg-white/[0.04] hover:text-neutral-300 ${collapsed ? "lg:justify-center lg:px-2" : ""}`}
         >
-          <MessageSquare size={14} />
-          Profile Setup
+          <MessageSquare size={14} className="shrink-0" />
+          <span className={collapsed ? "lg:hidden" : ""}>Profile Setup</span>
         </Link>
-        <div className="flex items-center gap-2 px-2 pt-2">
+        <div className={`flex items-center gap-2 px-2 pt-2 ${collapsed ? "lg:justify-center lg:px-0 lg:flex-col lg:gap-1" : ""}`}>
           <a
             href="https://github.com/UserAdityaKhawale"
             target="_blank"

@@ -25,7 +25,7 @@ export default function ActivityFeed() {
   };
 
   return (
-    <div className="bg-[#0e0e10] border border-white/[0.06] rounded-2xl p-4 flex flex-col gap-3">
+    <div className="bg-transparent backdrop-blur-sm border border-white/[0.06] rounded-2xl p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between">
         <span className="text-[12px] font-bold text-white">Activity Log</span>
         <Link href="/dashboard/analytics" className="text-[10px] text-[#EF5A6F] hover:text-[#ff8b98] font-semibold transition-colors">

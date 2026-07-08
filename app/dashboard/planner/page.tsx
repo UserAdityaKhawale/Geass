@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useGeassStore, TimeBlock } from "@/store/useGeassStore";
-import { Calendar, Plus, ChevronLeft, ChevronRight, Clock, MapPin, X } from "lucide-react";
+import { Calendar, Plus, ChevronLeft, ChevronRight, Clock, MapPin, X, Pencil, Trash2, Check } from "lucide-react";
 
 const HOURS = Array.from({ length: 17 }, (_, i) => i + 6); // 6 AM to 10 PM
 const DAYS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
@@ -26,7 +26,7 @@ function getWeekStart(d: Date) {
 }
 
 export default function PlannerPage() {
-  const { activeWorkspaceId, tasks, timeblocks, addTimeBlock, updateTask } = useGeassStore();
+  const { activeWorkspaceId, tasks, timeblocks, addTimeBlock, updateTask, updateTimeBlock, deleteTimeBlock } = useGeassStore();
 
   const [currentWeekStart, setCurrentWeekStart] = useState(() => getWeekStart(new Date()));
   const weekDays = getWeekDays(currentWeekStart);
@@ -38,6 +38,35 @@ export default function PlannerPage() {
   const [blockTitle, setBlockTitle] = useState("");
   const [blockSub, setBlockSub] = useState("");
   const [blockColor, setBlockColor] = useState("#7C3AED");
+
+  // Edit modal state
+  const [editingBlock, setEditingBlock] = useState<TimeBlock | null>(null);
+  const [editTitle, setEditTitle] = useState("");
+  const [editSub, setEditSub] = useState("");
+  const [editStart, setEditStart] = useState("");
+  const [editEnd, setEditEnd] = useState("");
+  const [editColor, setEditColor] = useState("#7C3AED");
+
+  const openEditModal = (block: TimeBlock) => {
+    setEditingBlock(block);
+    setEditTitle(block.title);
+    setEditSub(block.sub || "");
+    setEditStart(block.start);
+    setEditEnd(block.end);
+    setEditColor(block.color);
+  };
+
+  const saveEdit = () => {
+    if (!editingBlock || !editTitle.trim()) return;
+    updateTimeBlock(editingBlock._id, {
+      title: editTitle.trim(),
+      sub: editSub,
+      start: editStart,
+      end: editEnd,
+      color: editColor,
+    });
+    setEditingBlock(null);
+  };
 
   const workspaceBlocks = timeblocks.filter(b => b.workspaceId === activeWorkspaceId);
   const unscheduledTasks = tasks.filter(t => t.workspaceId === activeWorkspaceId && !t.dueDate && t.status !== "done");
@@ -196,7 +225,7 @@ export default function PlannerPage() {
                       >
                         {block ? (
                           <div
-                            className="absolute inset-1 rounded-lg px-2 py-1 text-left flex flex-col justify-between overflow-hidden shadow-lg border transition-all hover:brightness-110"
+                            className="absolute inset-1 rounded-lg px-2 py-1 text-left flex flex-col justify-between overflow-hidden shadow-lg border transition-all hover:brightness-110 group/block"
                             style={{
                               backgroundColor: `${block.color}15`,
                               borderColor: `${block.color}30`,
@@ -205,6 +234,23 @@ export default function PlannerPage() {
                           >
                             <p className="text-[10px] font-bold truncate leading-tight">{block.title}</p>
                             {block.sub && <p className="text-[8px] opacity-60 truncate mt-0.5">{block.sub}</p>}
+                            {/* Hover action buttons */}
+                            <div className="absolute top-0.5 right-0.5 opacity-0 group-hover/block:opacity-100 transition-opacity flex gap-0.5">
+                              <button
+                                onClick={e => { e.stopPropagation(); openEditModal(block); }}
+                                className="w-5 h-5 rounded flex items-center justify-center bg-black/40 hover:bg-black/70 text-white transition-all"
+                                title="Edit"
+                              >
+                                <Pencil size={9} />
+                              </button>
+                              <button
+                                onClick={e => { e.stopPropagation(); deleteTimeBlock(block._id); }}
+                                className="w-5 h-5 rounded flex items-center justify-center bg-black/40 hover:bg-[#EF5A6F]/80 text-white transition-all"
+                                title="Delete"
+                              >
+                                <Trash2 size={9} />
+                              </button>
+                            </div>
                           </div>
                         ) : (
                           <button className="opacity-0 group-hover:opacity-100 absolute top-1.5 right-1.5 text-neutral-700 hover:text-white p-0.5 rounded hover:bg-white/[0.05]">
@@ -304,6 +350,75 @@ export default function PlannerPage() {
             >
               Add Schedule Block
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Edit TimeBlock Modal */}
+      {editingBlock && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setEditingBlock(null)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div
+            className="relative w-full max-w-sm bg-[#111113] border border-white/[0.1] rounded-2xl p-5 shadow-2xl space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-[12px] font-bold text-white">Edit Time Block</span>
+              <button onClick={() => setEditingBlock(null)} className="text-neutral-500 hover:text-white">
+                <X size={14} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <input
+                autoFocus
+                type="text"
+                value={editTitle}
+                onChange={e => setEditTitle(e.target.value)}
+                onKeyDown={e => { if (e.key === "Enter") saveEdit(); if (e.key === "Escape") setEditingBlock(null); }}
+                placeholder="Time block title…"
+                className="w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-3 py-2 text-[12px] text-white focus:outline-none focus:border-white/[0.2]"
+              />
+              <input
+                type="text"
+                value={editSub}
+                onChange={e => setEditSub(e.target.value)}
+                placeholder="Description/notes (optional)"
+                className="w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-3 py-2 text-[12px] text-white focus:outline-none focus:border-white/[0.2]"
+              />
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-[9px] font-mono text-neutral-600 uppercase block mb-1.5">Start</label>
+                  <input type="time" value={editStart} onChange={e => setEditStart(e.target.value)}
+                    className="w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-3 py-2 text-[12px] text-white focus:outline-none [color-scheme:dark]" />
+                </div>
+                <div className="flex-1">
+                  <label className="text-[9px] font-mono text-neutral-600 uppercase block mb-1.5">End</label>
+                  <input type="time" value={editEnd} onChange={e => setEditEnd(e.target.value)}
+                    className="w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-3 py-2 text-[12px] text-white focus:outline-none [color-scheme:dark]" />
+                </div>
+              </div>
+              <div className="flex justify-between items-center pt-1 border-t border-white/[0.04]">
+                <span className="text-[10px] text-neutral-500">Color Tag</span>
+                <input type="color" value={editColor} onChange={e => setEditColor(e.target.value)}
+                  className="w-6 h-6 border-0 bg-transparent cursor-pointer" />
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                onClick={saveEdit}
+                className="flex-1 flex items-center justify-center gap-1.5 bg-[#EF5A6F] text-white font-bold text-[12px] py-2 rounded-xl hover:bg-[#d94a5f] transition-all"
+              >
+                <Check size={13} /> Save Changes
+              </button>
+              <button
+                onClick={() => setEditingBlock(null)}
+                className="px-4 py-2 border border-white/[0.08] text-neutral-400 hover:text-white text-[12px] font-bold rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
