@@ -14,6 +14,31 @@ export interface Workspace {
   color: string;
 }
 
+export interface Subtask {
+  _id: string;
+  title: string;
+  completed: boolean;
+  createdAt: string;
+}
+
+export interface TaskAttachment {
+  _id: string;
+  filename: string;
+  url: string;
+  type: string;
+  size: number;
+  uploadedAt: string;
+}
+
+export interface RepeatConfig {
+  enabled: boolean;
+  frequency: "daily" | "weekly" | "monthly" | "custom";
+  interval?: number;
+  daysOfWeek?: number[];
+  dayOfMonth?: number;
+  endDate?: string;
+}
+
 export interface Task {
   _id: string;
   workspaceId: string;
@@ -27,6 +52,12 @@ export interface Task {
   progress?: number;
   createdAt?: string;
   updatedAt?: string;
+  // Extended fields
+  description?: string;
+  endDate?: string;
+  subtasks: Subtask[];
+  attachments: TaskAttachment[];
+  repeat?: RepeatConfig;
 }
 
 export interface FocusSession {
@@ -71,6 +102,21 @@ export interface ActivityEntry {
 
 export type SyncStatus = "idle" | "syncing" | "error" | "offline";
 
+export interface TimerState {
+  running: boolean;
+  seconds: number;
+  sessionIndex: number;
+  customMinutes: number | null;
+  completedCount: number;
+}
+
+export interface MusicState {
+  playing: boolean;
+  currentTrackIndex: number;
+  volume: number;
+  currentTab: "Music" | "White Noise" | "Ambient";
+}
+
 // ─── Store Interface ───────────────────────────────────────────────────────────
 
 interface GeassStore {
@@ -84,6 +130,8 @@ interface GeassStore {
   activityLog: ActivityEntry[];
   syncStatus: SyncStatus;
   isHydrated: boolean;
+  timerState: TimerState;
+  musicState: MusicState;
 
   // Workspace actions
   setActiveWorkspace: (id: string) => void;
@@ -93,7 +141,7 @@ interface GeassStore {
 
   // Task actions
   setTasks: (tasks: Task[]) => void;
-  addTask: (task: Task) => void;
+  addTask: (task: Omit<Task, "subtasks" | "attachments"> & { subtasks?: Subtask[]; attachments?: TaskAttachment[] }) => void;
   updateTask: (id: string, changes: Partial<Task>) => void;
   moveTask: (taskId: string, newStatus: Task["status"], newIndex: number) => void;
   deleteTask: (id: string) => void;
@@ -108,12 +156,46 @@ interface GeassStore {
   updateNote: (id: string, changes: Partial<Note>) => void;
   deleteNote: (id: string) => void;
 
+  // Subtask actions
+  addSubtask: (taskId: string, subtask: Subtask) => void;
+  updateSubtask: (taskId: string, subtaskId: string, changes: Partial<Subtask>) => void;
+  deleteSubtask: (taskId: string, subtaskId: string) => void;
+  toggleSubtask: (taskId: string, subtaskId: string) => void;
+
+  // Attachment actions
+  addAttachment: (taskId: string, attachment: TaskAttachment) => void;
+  deleteAttachment: (taskId: string, attachmentId: string) => void;
+
+  // Repeat actions
+  updateRepeatConfig: (taskId: string, config: RepeatConfig) => void;
+
   // TimeBlock actions
   setTimeBlocks: (blocks: TimeBlock[]) => void;
   addTimeBlock: (block: TimeBlock) => void;
+  updateTimeBlock: (id: string, changes: Partial<TimeBlock>) => void;
+  deleteTimeBlock: (id: string) => void;
+  cleanupPastTimeBlocks: () => void;
 
   // Activity log
   pushActivity: (entry: Omit<ActivityEntry, "id" | "timestamp">) => void;
+
+  // Timer actions
+  setTimerState: (state: Partial<TimerState>) => void;
+  setTimerRunning: (running: boolean) => void;
+  setTimerSeconds: (seconds: number) => void;
+  setTimerSessionIndex: (index: number) => void;
+  setTimerCustomMinutes: (minutes: number | null) => void;
+  incrementTimerCompletedCount: () => void;
+  startTimer: () => void;
+  stopTimer: () => void;
+  toggleTimer: () => void;
+
+  // Music actions
+  setMusicState: (state: Partial<MusicState>) => void;
+  setMusicPlaying: (playing: boolean) => void;
+  setMusicCurrentTrackIndex: (index: number) => void;
+  setMusicVolume: (volume: number) => void;
+  setMusicCurrentTab: (tab: "Music" | "White Noise" | "Ambient") => void;
 
   // Hydration
   hydrateFromServer: (data: {
@@ -142,6 +224,19 @@ export const useGeassStore = create<GeassStore>()(
       activityLog: [],
       syncStatus: "idle",
       isHydrated: false,
+      timerState: {
+        running: false,
+        seconds: 25 * 60,
+        sessionIndex: 0,
+        customMinutes: null,
+        completedCount: 0,
+      },
+      musicState: {
+        playing: false,
+        currentTrackIndex: 0,
+        volume: 0.5,
+        currentTab: "Music",
+      },
 
       // ── Workspace ──
       setActiveWorkspace: (id) => {
@@ -171,9 +266,14 @@ export const useGeassStore = create<GeassStore>()(
       // ── Tasks ──
       setTasks: (tasks) => set({ tasks }),
       addTask: (task) => {
-        set((s) => ({ tasks: [...s.tasks, task] }));
-        get().pushActivity({ action: "created task", subject: task.title, type: "task" });
-        bgFetch("POST", "/api/tasks", task);
+        const taskWithDefaults: Task = {
+          ...task,
+          subtasks: task.subtasks || [],
+          attachments: task.attachments || [],
+        };
+        set((s) => ({ tasks: [...s.tasks, taskWithDefaults] }));
+        get().pushActivity({ action: "created task", subject: taskWithDefaults.title, type: "task" });
+        bgFetch("POST", "/api/tasks", taskWithDefaults);
       },
       updateTask: (id, changes) => {
         set((s) => ({
@@ -238,6 +338,115 @@ export const useGeassStore = create<GeassStore>()(
         bgFetch("POST", "/api/timeblocks", block);
       },
 
+      // ── Subtasks ──
+      addSubtask: (taskId, subtask) => {
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t._id === taskId
+              ? { ...t, subtasks: [...(t.subtasks || []), subtask] }
+              : t
+          ),
+        }));
+        const task = get().tasks.find((t) => t._id === taskId);
+        if (task) bgFetch("PATCH", `/api/tasks/${taskId}`, { subtasks: task.subtasks });
+      },
+      updateSubtask: (taskId, subtaskId, changes) => {
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t._id === taskId
+              ? { ...t, subtasks: (t.subtasks || []).map((st) => st._id === subtaskId ? { ...st, ...changes } : st) }
+              : t
+          ),
+        }));
+        const task = get().tasks.find((t) => t._id === taskId);
+        if (task) bgFetch("PATCH", `/api/tasks/${taskId}`, { subtasks: task.subtasks });
+      },
+      deleteSubtask: (taskId, subtaskId) => {
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t._id === taskId
+              ? { ...t, subtasks: (t.subtasks || []).filter((st) => st._id !== subtaskId) }
+              : t
+          ),
+        }));
+        const task = get().tasks.find((t) => t._id === taskId);
+        if (task) bgFetch("PATCH", `/api/tasks/${taskId}`, { subtasks: task.subtasks });
+      },
+      toggleSubtask: (taskId, subtaskId) => {
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t._id === taskId
+              ? { ...t, subtasks: (t.subtasks || []).map((st) => st._id === subtaskId ? { ...st, completed: !st.completed } : st) }
+              : t
+          ),
+        }));
+        const task = get().tasks.find((t) => t._id === taskId);
+        if (task) bgFetch("PATCH", `/api/tasks/${taskId}`, { subtasks: task.subtasks });
+      },
+
+      // ── Attachments ──
+      addAttachment: (taskId, attachment) => {
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t._id === taskId
+              ? { ...t, attachments: [...(t.attachments || []), attachment] }
+              : t
+          ),
+        }));
+        const task = get().tasks.find((t) => t._id === taskId);
+        if (task) bgFetch("PATCH", `/api/tasks/${taskId}`, { attachments: task.attachments });
+      },
+      deleteAttachment: (taskId, attachmentId) => {
+        set((s) => ({
+          tasks: s.tasks.map((t) =>
+            t._id === taskId
+              ? { ...t, attachments: (t.attachments || []).filter((a) => a._id !== attachmentId) }
+              : t
+          ),
+        }));
+        const task = get().tasks.find((t) => t._id === taskId);
+        if (task) bgFetch("PATCH", `/api/tasks/${taskId}`, { attachments: task.attachments });
+      },
+
+      // ── Repeat ──
+      updateRepeatConfig: (taskId, config) => {
+        set((s) => ({
+          tasks: s.tasks.map((t) => t._id === taskId ? { ...t, repeat: config } : t),
+        }));
+        bgFetch("PATCH", `/api/tasks/${taskId}`, { repeat: config });
+      },
+
+      // ── TimeBlock CRUD ──
+      updateTimeBlock: (id, changes) => {
+        set((s) => ({
+          timeblocks: s.timeblocks.map((tb) => (tb._id === id ? { ...tb, ...changes } : tb)),
+        }));
+        bgFetch("PATCH", `/api/timeblocks/${id}`, changes);
+      },
+      deleteTimeBlock: (id) => {
+        const block = get().timeblocks.find((tb) => tb._id === id);
+        set((s) => ({ timeblocks: s.timeblocks.filter((tb) => tb._id !== id) }));
+        if (block) get().pushActivity({ action: "deleted timeblock", subject: block.title, type: "schedule" });
+        bgFetch("DELETE", `/api/timeblocks/${id}`, {});
+      },
+      cleanupPastTimeBlocks: () => {
+        const now = new Date();
+        const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        const cutoffDate = sevenDaysAgo.toISOString().split("T")[0];
+        const todayStr = now.toISOString().split("T")[0];
+        const currentTime = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+
+        set((s) => ({
+          timeblocks: s.timeblocks.filter((tb) => {
+            if (tb.date < cutoffDate) return false;
+            if (tb.date > todayStr) return true;
+            if (tb.date === todayStr && tb.end > currentTime) return true;
+            if (tb.date < todayStr) return tb.date >= cutoffDate;
+            return false;
+          }),
+        }));
+      },
+
       // ── Activity ──
       pushActivity: (entry) => {
         const full: ActivityEntry = {
@@ -249,6 +458,58 @@ export const useGeassStore = create<GeassStore>()(
           activityLog: [full, ...s.activityLog].slice(0, 50), // keep last 50
         }));
       },
+
+      // ── Timer ──
+      setTimerState: (state) => set((s) => ({ timerState: { ...s.timerState, ...state } })),
+      setTimerRunning: (running) => set((s) => ({ timerState: { ...s.timerState, running } })),
+      setTimerSeconds: (seconds) => set((s) => ({ timerState: { ...s.timerState, seconds } })),
+      setTimerSessionIndex: (sessionIndex) => set((s) => ({ timerState: { ...s.timerState, sessionIndex } })),
+      setTimerCustomMinutes: (customMinutes) => set((s) => ({ timerState: { ...s.timerState, customMinutes } })),
+      incrementTimerCompletedCount: () => set((s) => ({ timerState: { ...s.timerState, completedCount: s.timerState.completedCount + 1 } })),
+
+      startTimer: () => {
+        const state = get();
+        if (timerIntervalRef || state.timerState.running) return;
+
+        set((s) => ({ timerState: { ...s.timerState, running: true } }));
+
+        timerIntervalRef = setInterval(() => {
+          const currentState = get().timerState;
+          const newSeconds = currentState.seconds - 1;
+
+          if (newSeconds <= 0) {
+            get().stopTimer();
+            get().incrementTimerCompletedCount();
+            // Timer completion handled by components (focus session logging, etc.)
+          } else {
+            set((s) => ({ timerState: { ...s.timerState, seconds: newSeconds } }));
+          }
+        }, 1000);
+      },
+
+      stopTimer: () => {
+        if (timerIntervalRef) {
+          clearInterval(timerIntervalRef);
+          timerIntervalRef = null;
+        }
+        set((s) => ({ timerState: { ...s.timerState, running: false } }));
+      },
+
+      toggleTimer: () => {
+        const state = get();
+        if (state.timerState.running) {
+          get().stopTimer();
+        } else {
+          get().startTimer();
+        }
+      },
+
+      // ── Music ──
+      setMusicState: (state) => set((s) => ({ musicState: { ...s.musicState, ...state } })),
+      setMusicPlaying: (playing) => set((s) => ({ musicState: { ...s.musicState, playing } })),
+      setMusicCurrentTrackIndex: (currentTrackIndex) => set((s) => ({ musicState: { ...s.musicState, currentTrackIndex } })),
+      setMusicVolume: (volume) => set((s) => ({ musicState: { ...s.musicState, volume } })),
+      setMusicCurrentTab: (currentTab) => set((s) => ({ musicState: { ...s.musicState, currentTab } })),
 
       // ── Hydration ──
       hydrateFromServer: (data) => {
@@ -281,10 +542,16 @@ export const useGeassStore = create<GeassStore>()(
         notes:             state.notes,
         timeblocks:        state.timeblocks,
         activityLog:       state.activityLog,
+        timerState:        state.timerState,
+        musicState:        state.musicState,
       }),
     }
   )
 );
+
+// ─── Timer singleton interval ─────────────────────────────────────────────────
+
+let timerIntervalRef: ReturnType<typeof setInterval> | null = null;
 
 // ─── Background fetch with offline queue ──────────────────────────────────────
 
