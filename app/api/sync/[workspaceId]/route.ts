@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { connectDB } from "@/lib/mongodb";
 import { Task } from "@/lib/models/Task";
-import { Project } from "@/lib/models/Project";
 import { FocusSession } from "@/lib/models/FocusSession";
 import { Workspace } from "@/lib/models/Workspace";
 import { Note } from "@/lib/models/Note";
@@ -45,8 +44,7 @@ export async function GET(
     }
 
     // Fetch workspace-scoped data
-    const [projects, tasks, focusSessions, notes, timeblocks] = await Promise.all([
-      Project.find({ workspaceId, userId }).sort({ createdAt: -1 }).lean(),
+    const [tasks, focusSessions, notes, timeblocks] = await Promise.all([
       Task.find({ workspaceId, userId }).sort({ orderIndex: 1 }).lean(),
       FocusSession.find({ workspaceId, userId }).sort({ completedAt: -1 }).limit(100).lean(),
       Note.find({ workspaceId, userId }).sort({ updatedAt: -1 }).lean(),
@@ -55,7 +53,6 @@ export async function GET(
 
     return NextResponse.json({
       workspaces: workspaces.map(serialize),
-      projects:   projects.map(serialize),
       tasks:      tasks.map(serialize),
       focusSessions: focusSessions.map(serialize),
       notes:      notes.map(serialize),
@@ -72,6 +69,5 @@ function serialize(doc: Record<string, unknown>): Record<string, unknown> {
   const out = { ...doc };
   if (out._id) out._id = String(out._id);
   if (out.workspaceId) out.workspaceId = String(out.workspaceId);
-  if (out.projectId) out.projectId = String(out.projectId);
   return out;
 }

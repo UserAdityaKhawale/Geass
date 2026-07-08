@@ -1,8 +1,10 @@
 "use client";
 
+import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useState } from "react";
 import { useGeassStore } from "@/store/useGeassStore";
-import { Play, Pause, RotateCcw, Maximize2, Minimize2, Sparkles, Volume2, Music, CheckCircle } from "lucide-react";
+import { Play, Pause, RotateCcw, Maximize2, Minimize2, Sparkles, Volume2, Music, CheckCircle2, Check, Target, Clock } from "lucide-react";
+import Orb from "@/components/ui/Orb";
 
 const SESSIONS = [
   { label: "Focus Sprint", mins: 25, color: "#EF5A6F", type: "pomodoro" as const },
@@ -123,9 +125,20 @@ export default function FocusPage() {
   const strokeDashoffset = circ * (1 - progress);
 
   return (
-    <div className={`flex flex-col h-full bg-[#030303] items-center justify-center p-6 transition-all duration-500 relative ${
+    <div className={`flex flex-col h-full bg-[#030303] items-center justify-center p-6 transition-all duration-500 relative overflow-hidden ${
       isFullscreen ? "fixed inset-0 z-50 bg-[#020202]" : ""
     }`}>
+      {/* Orb Background */}
+      <div className="absolute inset-0 w-full h-full z-0">
+        <Orb 
+          hue={320} 
+          hoverIntensity={0.36} 
+          rotateOnHover={false} 
+          forceHoverState={true} 
+          backgroundColor="#030303" 
+        />
+      </div>
+
       {/* Hidden audio element */}
       <audio ref={audioRef} loop />
 
@@ -143,17 +156,18 @@ export default function FocusPage() {
         </button>
       </div>
 
-      <div className="max-w-md w-full flex flex-col items-center gap-8 z-10 mt-6">
+      <div className="max-w-md w-full flex flex-col items-center gap-6 z-10 mt-6">
         {/* Session selector tabs */}
-        <div className="flex bg-white/[0.02] border border-white/[0.08] rounded-xl p-1 shrink-0 gap-1">
+        <div className="flex bg-white/[0.02] border border-white/[0.08] rounded-2xl p-1.5 shrink-0 gap-1">
           {SESSIONS.map((s, i) => (
             <button
               key={s.label}
               onClick={() => selectSession(i)}
-              className={`px-4 py-1.5 text-[11px] font-bold rounded-lg transition-all ${
-                activeIdx === i ? "bg-white/[0.06] text-white" : "text-neutral-500 hover:text-neutral-300"
+              className={`px-4 py-2 text-[11px] font-bold rounded-xl transition-all duration-300 flex flex-col items-center ${
+                activeIdx === i ? "bg-white/[0.08] text-white shadow-lg" : "text-neutral-500 hover:text-neutral-300"
               }`}
             >
+              <Clock size={12} className={activeIdx === i ? "mb-1" : "mb-1 opacity-50"} />
               {s.label}
             </button>
           ))}
@@ -161,9 +175,14 @@ export default function FocusPage() {
 
         {/* Big circular SVG timer */}
         <div className="relative">
-          <svg width="240" height="240" viewBox="0 0 240 240">
+          <motion.svg
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ duration: 0.3 }}
+            width="240" height="240" viewBox="0 0 240 240"
+          >
             <circle cx="120" cy="120" r={R} fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="8" />
-            <circle
+            <motion.circle
               cx="120" cy="120" r={R}
               fill="none"
               stroke={sess.color}
@@ -172,50 +191,103 @@ export default function FocusPage() {
               strokeDasharray={circ}
               strokeDashoffset={strokeDashoffset}
               transform="rotate(-90 120 120)"
-              style={{ transition: running ? "stroke-dashoffset 1s linear" : "none" }}
+              style={{ transition: running ? "stroke-dashoffset 1s linear" : "stroke-dashoffset 0.3s ease-out" }}
             />
-          </svg>
+          </motion.svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center select-none">
-            <span className="text-[44px] font-black tracking-tighter text-white tabular-nums leading-none mb-1">
+            <motion.span
+              key={`${mm}:${ss}`}
+              initial={{ scale: 1.05 }}
+              animate={{ scale: 1 }}
+              className="text-[48px] font-black tracking-tighter text-white tabular-nums leading-none mb-1"
+            >
               {mm}:{ss}
-            </span>
-            <span className="text-[9px] font-bold text-neutral-600 uppercase tracking-widest">
+            </motion.span>
+            <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-widest">
               {sess.label}
             </span>
           </div>
         </div>
 
-        {/* Task selector and complete controls */}
-        <div className="w-full bg-[#0e0e10] border border-white/[0.06] rounded-2xl p-4 space-y-3.5">
-          <div>
-            <label className="text-[9px] font-mono uppercase tracking-widest text-neutral-600 block mb-2">Focus Target</label>
-            <select
-              value={targetTaskId}
-              onChange={e => setTargetTaskId(e.target.value)}
-              className="w-full bg-white/[0.03] border border-white/[0.07] rounded-xl px-3 py-2 text-[11px] text-white outline-none cursor-pointer focus:border-[#EF5A6F]/30"
+        {/* Task selector */}
+        <div className="w-full bg-[#0e0e10] border border-white/[0.08] rounded-2xl p-4 space-y-3">
+          <div className="flex items-center gap-2 mb-1">
+            <Target size={12} className="text-neutral-500" />
+            <span className="text-[10px] font-mono uppercase tracking-widest text-neutral-500">Focus Target</span>
+          </div>
+          
+          <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+            <button
+              onClick={() => setTargetTaskId("")}
+              className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all duration-200 ${
+                targetTaskId === ""
+                  ? "bg-white/[0.06] border border-white/[0.12] text-white"
+                  : "bg-white/[0.02] border border-transparent text-neutral-400 hover:bg-white/[0.04] hover:border-white/[0.08]"
+              }`}
             >
-              <option value="">-- Select a task to focus on --</option>
-              {todaysTasks.map(t => (
-                <option key={t._id} value={t._id}>{t.title}</option>
-              ))}
-            </select>
+              <div className="w-5 h-5 rounded-lg border border-dashed border-neutral-600 flex items-center justify-center shrink-0">
+                {targetTaskId === "" && <Check size={11} className="text-[#EF5A6F]" />}
+              </div>
+              <span className="text-[11px] font-semibold">No specific task</span>
+            </button>
+            
+            {todaysTasks.map((t) => (
+              <button
+                key={t._id}
+                onClick={() => setTargetTaskId(t._id)}
+                className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl text-left transition-all duration-200 ${
+                  targetTaskId === t._id
+                    ? "bg-white/[0.06] border border-white/[0.12] text-white"
+                    : "bg-white/[0.02] border border-transparent text-neutral-400 hover:bg-white/[0.04] hover:border-white/[0.08]"
+                }`}
+              >
+                <div
+                  className="w-5 h-5 rounded-lg border flex items-center justify-center shrink-0"
+                  style={{ borderColor: targetTaskId === t._id ? "#EF5A6F" : "rgba(255,255,255,0.12)" }}
+                >
+                  {targetTaskId === t._id && <Check size={11} className="text-[#EF5A6F]" />}
+                </div>
+                <span className="text-[11px] font-semibold truncate flex-1">{t.title}</span>
+                {t.priority && (
+                  <span
+                    className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
+                    style={{
+                      backgroundColor: t.priority === "high" ? "rgba(239,90,111,0.15)" : t.priority === "medium" ? "rgba(245,158,11,0.15)" : "rgba(34,197,94,0.15)",
+                      color: t.priority === "high" ? "#EF5A6F" : t.priority === "medium" ? "#f59e0b" : "#22c55e"
+                    }}
+                  >
+                    {t.priority}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
 
-          {targetTask && (
-            <div className="flex items-center justify-between border-t border-white/[0.04] pt-3 animate-fadeIn">
-              <span className="text-[11px] text-neutral-400 font-semibold truncate flex-1 pr-4">{targetTask.title}</span>
-              <button
-                onClick={handleCompleteTask}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#22c55e]/10 border border-[#22c55e]/20 text-[#22c55e] text-[10px] font-bold rounded-xl hover:bg-[#22c55e]/20 transition-all shrink-0"
+          <AnimatePresence>
+            {targetTask && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-center justify-between border-t border-white/[0.05] pt-3 mt-2"
               >
-                <CheckCircle size={11} /> Complete Task
-              </button>
-            </div>
-          )}
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <CheckCircle2 size={14} className="text-[#22c55e] shrink-0" />
+                  <span className="text-[11px] text-neutral-300 font-semibold truncate">{targetTask.title}</span>
+                </div>
+                <button
+                  onClick={handleCompleteTask}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#22c55e]/10 border border-[#22c55e]/20 text-[#22c55e] text-[10px] font-bold rounded-xl hover:bg-[#22c55e]/20 transition-all shrink-0"
+                >
+                  <CheckCircle2 size={11} />
+                  Complete Task
+                </button>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
         {/* Lofi player controller */}
-        <div className="w-full bg-[#0e0e10] border border-white/[0.06] rounded-2xl p-4 flex flex-col gap-3">
+        <div className="w-full bg-[#0e0e10] border border-white/[0.08] rounded-2xl p-4 flex flex-col gap-3">
           <div className="flex items-center justify-between">
             <span className="text-[10px] font-bold text-white flex items-center gap-1.5">
               <Music size={11} className="text-[#EF5A6F]" />
@@ -223,7 +295,7 @@ export default function FocusPage() {
             </span>
             <button
               onClick={toggleAudio}
-              className={`px-3 py-1 rounded-xl text-[10px] font-bold transition-all border ${
+              className={`px-3 py-1.5 rounded-xl text-[10px] font-bold transition-all border ${
                 audioPlaying
                   ? "bg-[#EF5A6F]/10 border-[#EF5A6F]/30 text-[#EF5A6F]"
                   : "border-white/[0.08] text-neutral-600 hover:text-white"
@@ -239,8 +311,8 @@ export default function FocusPage() {
               <button
                 key={t.title}
                 onClick={() => setTrackIdx(idx)}
-                className={`py-1 text-[9px] font-bold rounded-lg truncate ${
-                  trackIdx === idx ? "bg-white/[0.05] text-white" : "text-neutral-700 hover:text-neutral-400"
+                className={`py-1.5 text-[9px] font-bold rounded-lg truncate transition-all ${
+                  trackIdx === idx ? "bg-white/[0.06] text-white" : "text-neutral-600 hover:text-neutral-300 hover:bg-white/[0.02]"
                 }`}
               >
                 {t.title.split(" ")[0]}
@@ -249,7 +321,7 @@ export default function FocusPage() {
           </div>
 
           <div className="flex items-center gap-2 px-1">
-            <Volume2 size={10} className="text-neutral-700" />
+            <Volume2 size={10} className="text-neutral-500" />
             <input
               type="range"
               min="0"
@@ -264,19 +336,23 @@ export default function FocusPage() {
 
         {/* Timer controls */}
         <div className="flex gap-3 w-full shrink-0">
-          <button
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             onClick={() => setRunning(!running)}
-            className="flex-1 py-2.5 bg-[#EF5A6F] hover:bg-[#d94a5f] text-white font-bold text-[12px] rounded-xl transition-all shadow-lg shadow-[#EF5A6F]/20 flex items-center justify-center gap-1.5"
+            className="flex-1 py-3 bg-[#EF5A6F] hover:bg-[#d94a5f] text-white font-bold text-[12px] rounded-xl transition-all shadow-lg shadow-[#EF5A6F]/20 flex items-center justify-center gap-1.5"
           >
-            {running ? <Pause size={13} fill="white" /> : <Play size={13} fill="white" />}
+            {running ? <Pause size={14} fill="white" /> : <Play size={14} fill="white" />}
             {running ? "Pause Sprint" : "Start Focus Session"}
-          </button>
-          <button
+          </motion.button>
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
             onClick={resetTimer}
-            className="px-4 py-2.5 border border-white/[0.08] bg-white/[0.02] text-neutral-500 hover:text-white hover:bg-white/[0.05] rounded-xl transition-all"
+            className="px-4 py-3 border border-white/[0.08] bg-white/[0.03] text-neutral-500 hover:text-white hover:bg-white/[0.05] rounded-xl transition-all"
           >
-            <RotateCcw size={13} />
-          </button>
+            <RotateCcw size={14} />
+          </motion.button>
         </div>
       </div>
     </div>

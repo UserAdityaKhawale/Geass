@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { connectDB } from "@/lib/mongodb";
 import { Workspace } from "@/lib/models/Workspace";
+import { UserSettings } from "@/lib/models/UserSettings";
 
 export async function GET() {
   try {
@@ -24,8 +25,25 @@ export async function POST(req: NextRequest) {
     if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     await connectDB();
-    const body = await req.json();
+    
+    // Get user's subscription tier
+    let userSettings = await UserSettings.findOne({ userId });
+    if (!userSettings) {
+      userSettings = await UserSettings.create({ userId });
+    }
 
+    // Count current workspaces
+    const workspaceCount = await Workspace.countDocuments({ userId });
+    const limit = userSettings.subscriptionTier === "free" ? 4 : 10;
+
+    if (workspaceCount >= limit) {
+      return NextResponse.json(
+        { error: `Workspace limit reached! You can only create ${limit} workspaces on your current plan.` },
+        { status: 403 }
+      );
+    }
+
+    const body = await req.json();
     const { _id, name, icon, color } = body;
 
     const workspace = await Workspace.create({

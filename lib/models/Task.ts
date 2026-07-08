@@ -2,7 +2,6 @@ import { Schema, model, models, Document, Types } from "mongoose";
 
 export interface ITask extends Document {
   workspaceId: Types.ObjectId;
-  projectId?: Types.ObjectId;
   userId: string;
   title: string;
   status: "todo" | "in_progress" | "done" | "backlog";
@@ -19,7 +18,6 @@ export interface ITask extends Document {
 const TaskSchema = new Schema<ITask>(
   {
     workspaceId:   { type: Schema.Types.ObjectId, ref: "Workspace", required: true, index: true },
-    projectId:     { type: Schema.Types.ObjectId, ref: "Project", index: true },
     userId:        { type: String, required: true, index: true },
     title:         { type: String, required: true },
     status:        { type: String, enum: ["todo", "in_progress", "done", "backlog"], default: "todo" },

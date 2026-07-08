@@ -1,14 +1,27 @@
 "use client";
 
+import { useState, useRef, useEffect } from "react";
 import { useGeassStore } from "@/store/useGeassStore";
-import { CheckCircle2, Timer, Zap, Layers, History, Award } from "lucide-react";
+import { CheckCircle2, Timer, Zap, Layers, History, Award, MessageSquare, Send, X, Loader2, Bot, User } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+}
 
 export default function AnalyticsPage() {
-  const { activeWorkspaceId, tasks, projects, focusSessions } = useGeassStore();
+  const { activeWorkspaceId, tasks, focusSessions, notes } = useGeassStore();
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputValue, setInputValue] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const workspaceTasks = tasks.filter(t => t.workspaceId === activeWorkspaceId);
   const workspaceSessions = focusSessions.filter(s => s.workspaceId === activeWorkspaceId);
-  const workspaceProjects = projects.filter(p => p.workspaceId === activeWorkspaceId);
+  const workspaceNotes = notes.filter(n => n.workspaceId === activeWorkspaceId);
 
   // Stats aggregate calculations
   const totalCompletedTasks = workspaceTasks.filter(t => t.status === "done").length;
@@ -19,9 +32,7 @@ export default function AnalyticsPage() {
   const focusMins = totalFocusMinutes % 60;
   const focusTimeStr = focusHrs > 0 ? `${focusHrs}h ${focusMins}m` : `${focusMins}m`;
 
-  const averageProjectProgress = workspaceProjects.length > 0
-    ? Math.round(workspaceProjects.reduce((acc, curr) => acc + (curr.progress || 0), 0) / workspaceProjects.length)
-    : 0;
+  const totalTasksInWorkspace = workspaceTasks.length;
 
   // Streak calculations
   const countsByDate: Record<string, number> = {};
@@ -53,12 +64,86 @@ export default function AnalyticsPage() {
   }
   if (hasToday && streak === 0) streak = 1;
 
+  // Scroll to bottom of chat
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const handleSendMessage = async () => {
+    if (!inputValue.trim() || isLoading) return;
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: inputValue,
+    };
+
+    setMessages(prev => [...prev, userMessage]);
+    setInputValue("");
+    setIsLoading(true);
+
+    try {
+      const context = {
+        tasks: workspaceTasks,
+        focusSessions: workspaceSessions,
+        notes: workspaceNotes,
+        stats: {
+          totalCompletedTasks,
+          totalTasksCount,
+          totalFocusMinutes,
+          streak,
+        },
+      };
+
+      const res = await fetch("/api/ai", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: inputValue,
+          context,
+          provider: "gemini",
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: data.response || "Here's what I found!",
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      } else {
+        throw new Error("Failed to get response");
+      }
+    } catch (err) {
+      console.error("Chat error:", err);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: "Sorry, I couldn't process that right now. Please try again!",
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-[20px] font-black text-white tracking-tight">Analytics Workspace</h1>
-        <p className="text-[12px] text-neutral-500 mt-1">Real-time productivity summary metrics for your active workspace.</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-[20px] font-black text-white tracking-tight">Analytics Workspace</h1>
+          <p className="text-[12px] text-neutral-500 mt-1">Real-time productivity summary metrics for your active workspace.</p>
+        </div>
+        <button
+          onClick={() => setIsChatOpen(!isChatOpen)}
+          className="flex items-center gap-2 px-4 py-2 bg-[#EF5A6F] text-white text-sm font-bold rounded-xl hover:bg-[#d94a5f] transition-all shadow-lg shadow-[#EF5A6F]/20"
+        >
+          <MessageSquare size={16} />
+          <span>AI Assistant</span>
+        </button>
       </div>
 
       {/* Summary Stats Cards */}
@@ -67,7 +152,7 @@ export default function AnalyticsPage() {
           { icon: CheckCircle2, label: "Tasks Completed", value: String(totalCompletedTasks), sub: `/ ${totalTasksCount} total`, color: "#22c55e" },
           { icon: Timer, label: "Total Focus Time", value: focusTimeStr, sub: `${workspaceSessions.length} sessions`, color: "#7C3AED" },
           { icon: Award, label: "Current Streak", value: `${streak} days`, sub: "focus target streak", color: "#EF5A6F" },
-          { icon: Layers, label: "Avg Project Progress", value: `${averageProjectProgress}%`, sub: `${workspaceProjects.length} projects`, color: "#f59e0b" },
+          { icon: Layers, label: "Total Tasks", value: String(totalTasksInWorkspace), sub: "in workspace", color: "#f59e0b" },
         ].map(card => (
           <div key={card.label} className="bg-[#0e0e10] border border-white/[0.06] rounded-2xl p-4 flex flex-col gap-3">
             <div className="flex items-center gap-2">
@@ -133,6 +218,100 @@ export default function AnalyticsPage() {
           </div>
         </div>
       </div>
+
+      {/* Chat Widget */}
+      <AnimatePresence>
+        {isChatOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.9 }}
+            className="fixed bottom-6 right-6 w-96 max-w-[90vw] bg-[#0a0a0c] border border-white/10 rounded-2xl shadow-2xl overflow-hidden z-50"
+          >
+            {/* Chat Header */}
+            <div className="flex justify-between items-center p-4 border-b border-white/10 bg-[#EF5A6F]/10">
+              <div className="flex items-center gap-2">
+                <Bot size={20} className="text-[#EF5A6F]" />
+                <h3 className="text-white font-bold">AI Assistant</h3>
+              </div>
+              <button
+                onClick={() => setIsChatOpen(false)}
+                className="text-neutral-400 hover:text-white transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Chat Messages */}
+            <div className="p-4 max-h-80 overflow-y-auto space-y-4 scrollbar-thin scrollbar-thumb-white/10">
+              {messages.length === 0 && (
+                <div className="text-center text-neutral-500 text-sm py-8">
+                  Ask me about your productivity or billing!
+                </div>
+              )}
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                >
+                  {msg.role === "assistant" && (
+                    <div className="w-8 h-8 rounded-full bg-[#7C3AED]/20 flex items-center justify-center shrink-0">
+                      <Bot size={16} className="text-[#7C3AED]" />
+                    </div>
+                  )}
+                  <div
+                    className={`max-w-[80%] p-3 rounded-xl text-sm ${
+                      msg.role === "user"
+                        ? "bg-[#EF5A6F] text-white"
+                        : "bg-white/5 text-neutral-300 border border-white/10"
+                    }`}
+                  >
+                    {msg.content}
+                  </div>
+                  {msg.role === "user" && (
+                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center shrink-0">
+                      <User size={16} className="text-white" />
+                    </div>
+                  )}
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-[#7C3AED]/20 flex items-center justify-center shrink-0">
+                    <Bot size={16} className="text-[#7C3AED]" />
+                  </div>
+                  <div className="bg-white/5 border border-white/10 p-3 rounded-xl flex items-center gap-2">
+                    <Loader2 size={16} className="animate-spin text-neutral-400" />
+                    <span className="text-neutral-400 text-sm">Thinking...</span>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Chat Input */}
+            <div className="p-4 border-t border-white/10">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                  placeholder="Ask about your stats or billing..."
+                  className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-sm text-white placeholder-neutral-500 focus:outline-none focus:border-[#EF5A6F]/50"
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={!inputValue.trim() || isLoading}
+                  className="px-4 py-2 bg-[#EF5A6F] text-white rounded-xl hover:bg-[#d94a5f] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <Send size={16} />
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

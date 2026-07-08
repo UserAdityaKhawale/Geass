@@ -14,22 +14,9 @@ export interface Workspace {
   color: string;
 }
 
-export interface Project {
-  _id: string;
-  workspaceId: string;
-  name: string;
-  description: string;
-  status: "active" | "archived" | "done";
-  progress: number;
-  color: string;
-  icon: string;
-  dueDate?: string;
-}
-
 export interface Task {
   _id: string;
   workspaceId: string;
-  projectId?: string;
   title: string;
   status: "todo" | "in_progress" | "done" | "backlog";
   priority: "high" | "medium" | "low";
@@ -79,7 +66,7 @@ export interface ActivityEntry {
   subject: string;
   detail?: string;
   timestamp: string;
-  type: "task" | "project" | "focus" | "system" | "note" | "schedule";
+  type: "task" | "focus" | "system" | "note" | "schedule";
 }
 
 export type SyncStatus = "idle" | "syncing" | "error" | "offline";
@@ -90,7 +77,6 @@ interface GeassStore {
   // State
   activeWorkspaceId: string | null;
   workspaces: Workspace[];
-  projects: Project[];
   tasks: Task[];
   focusSessions: FocusSession[];
   notes: Note[];
@@ -103,12 +89,7 @@ interface GeassStore {
   setActiveWorkspace: (id: string) => void;
   setWorkspaces: (ws: Workspace[]) => void;
   addWorkspace: (ws: Workspace) => void;
-
-  // Project actions
-  setProjects: (projects: Project[]) => void;
-  addProject: (project: Project) => void;
-  updateProject: (id: string, changes: Partial<Project>) => void;
-  deleteProject: (id: string) => void;
+  deleteWorkspace: (id: string) => void;
 
   // Task actions
   setTasks: (tasks: Task[]) => void;
@@ -137,7 +118,6 @@ interface GeassStore {
   // Hydration
   hydrateFromServer: (data: {
     workspaces?: Workspace[];
-    projects?: Project[];
     tasks?: Task[];
     focusSessions?: FocusSession[];
     notes?: Note[];
@@ -155,7 +135,6 @@ export const useGeassStore = create<GeassStore>()(
       // ── Initial state ──
       activeWorkspaceId: null,
       workspaces: [],
-      projects: [],
       tasks: [],
       focusSessions: [],
       notes: [],
@@ -174,25 +153,19 @@ export const useGeassStore = create<GeassStore>()(
         get().pushActivity({ action: "created workspace", subject: ws.name, type: "system" });
         bgFetch("POST", "/api/workspaces", ws);
       },
-
-      // ── Projects ──
-      setProjects: (projects) => set({ projects }),
-      addProject: (project) => {
-        set((s) => ({ projects: [...s.projects, project] }));
-        get().pushActivity({ action: "created project", subject: project.name, type: "project" });
-        bgFetch("POST", "/api/projects", project);
-      },
-      updateProject: (id, changes) => {
+      deleteWorkspace: (id) => {
+        const workspace = get().workspaces.find((w) => w._id === id);
         set((s) => ({
-          projects: s.projects.map((p) => (p._id === id ? { ...p, ...changes } : p)),
+          workspaces: s.workspaces.filter((w) => w._id !== id),
+          tasks: s.tasks.filter((t) => t.workspaceId !== id),
+          notes: s.notes.filter((n) => n.workspaceId !== id),
+          focusSessions: s.focusSessions.filter((f) => f.workspaceId !== id),
+          timeblocks: s.timeblocks.filter((tb) => tb.workspaceId !== id),
         }));
-        bgFetch("PATCH", `/api/projects/${id}`, changes);
-      },
-      deleteProject: (id) => {
-        const proj = get().projects.find((p) => p._id === id);
-        set((s) => ({ projects: s.projects.filter((p) => p._id !== id) }));
-        if (proj) get().pushActivity({ action: "archived project", subject: proj.name, type: "project" });
-        bgFetch("DELETE", `/api/projects/${id}`, {});
+        if (workspace) {
+          get().pushActivity({ action: "deleted workspace", subject: workspace.name, type: "system" });
+        }
+        bgFetch("DELETE", `/api/workspaces/${id}`, {});
       },
 
       // ── Tasks ──
@@ -281,7 +254,6 @@ export const useGeassStore = create<GeassStore>()(
       hydrateFromServer: (data) => {
         set({
           workspaces:    data.workspaces    ?? get().workspaces,
-          projects:      data.projects      ?? get().projects,
           tasks:         data.tasks         ?? get().tasks,
           focusSessions: data.focusSessions ?? get().focusSessions,
           notes:         data.notes         ?? get().notes,
@@ -304,7 +276,6 @@ export const useGeassStore = create<GeassStore>()(
       partialize: (state) => ({
         activeWorkspaceId: state.activeWorkspaceId,
         workspaces:        state.workspaces,
-        projects:          state.projects,
         tasks:             state.tasks,
         focusSessions:     state.focusSessions,
         notes:             state.notes,

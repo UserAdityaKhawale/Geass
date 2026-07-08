@@ -13,12 +13,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
 
     // Map frontend fields (e.g. status todo, in_progress, etc) to schema
-    const { _id, workspaceId, projectId, title, status, priority, dueDate, estimatedTime, orderIndex, tag } = body;
+    const { _id, workspaceId, title, status, priority, dueDate, estimatedTime, orderIndex, tag } = body;
 
     const task = await Task.create({
       _id: _id || undefined, // use client-generated ID if present for offline/optimistic sync mapping
       workspaceId,
-      projectId: projectId || undefined,
       userId,
       title,
       status,

@@ -55,14 +55,14 @@ export default function DailyTimeline() {
         {visibleBlocks.map((ev, i) => (
           <div
             key={i}
-            className="flex gap-3 items-start p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] transition-colors cursor-pointer group"
+            className="flex gap-3 items-center p-2.5 rounded-xl bg-white/[0.02] hover:bg-white/[0.04] transition-colors cursor-pointer group"
           >
             <div
-              className="w-[3px] rounded-full self-stretch shrink-0 mt-0.5"
-              style={{ backgroundColor: ev.color, minHeight: "36px" }}
+              className="w-[3px] rounded-full shrink-0"
+              style={{ backgroundColor: ev.color, height: "32px" }}
             />
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-[11px] font-bold text-white leading-tight truncate">{ev.title}</p>
                   {ev.sub && <p className="text-[10px] text-neutral-600 mt-0.5 truncate">{ev.sub}</p>}

@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useAuth, UserButton } from "@clerk/nextjs";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
-import ThemeToggle from "./ThemeToggle";
+import { AnimatedThemeToggler } from "@/components/ui/animated-theme-toggler";
 
 const NAV_LINKS = [
   { name: "Features", href: "#features" },
@@ -100,7 +100,7 @@ const Navbar = () => {
         {/* Action Buttons (Desktop & Mobile) */}
         <div className="relative z-10 flex items-center gap-3">
           <div className="scale-90 md:scale-100">
-            <ThemeToggle />
+            <AnimatedThemeToggler variant="circle" duration={500} />
           </div>
           <div className="hidden sm:flex items-center gap-3">
             {!userId ? (

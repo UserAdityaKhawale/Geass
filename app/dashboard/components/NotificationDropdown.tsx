@@ -1,41 +1,79 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useGeassStore } from "@/store/useGeassStore";
-import { AlertCircle, Calendar, CheckSquare, Sparkles } from "lucide-react";
+import { AlertCircle, Calendar, Sparkles, Timer } from "lucide-react";
+
+interface Notification {
+  id: string;
+  title: string;
+  desc: string;
+  icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>;
+  color: string;
+}
 
 interface Props {
   onClose: () => void;
 }
 
 export default function NotificationDropdown({ onClose }: Props) {
-  const { tasks, activeWorkspaceId } = useGeassStore();
+  const { tasks, activeWorkspaceId, focusSessions } = useGeassStore();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const workspaceTasks = tasks.filter(t => t.workspaceId === activeWorkspaceId && t.status !== "done");
-  const overdueTaskName = workspaceTasks.length > 0 ? workspaceTasks[0].title : "SaaS Launch Plan";
+  const overdueTaskName = workspaceTasks.length > 0 ? workspaceTasks[0].title : "Your Tasks";
 
-  const notifications = [
-    {
-      id: "1",
-      title: "Daily Review",
-      desc: "Plan your capacity and timeblocks for today.",
-      icon: Calendar,
-      color: "#7C3AED",
-    },
-    {
-      id: "2",
-      title: "Overdue Target",
-      desc: `"${overdueTaskName}" requires urgent execution.`,
-      icon: AlertCircle,
-      color: "#EF5A6F",
-    },
-    {
-      id: "3",
-      title: "Streak Warning",
-      desc: "Complete one task to maintain your deep work momentum.",
-      icon: Sparkles,
-      color: "#f59e0b",
-    },
-  ];
+  // Generate nudges based on activity
+  useEffect(() => {
+    const newNotifications: Notification[] = [
+      {
+        id: "1",
+        title: "Daily Review",
+        desc: "Plan your capacity and timeblocks for today.",
+        icon: Calendar,
+        color: "#7C3AED",
+      },
+    ];
+
+    // Check for overdue tasks
+    if (workspaceTasks.length > 0) {
+      newNotifications.push({
+        id: "2",
+        title: "Pending Tasks",
+        desc: `"${overdueTaskName}" and ${workspaceTasks.length - 1} others need attention.`,
+        icon: AlertCircle,
+        color: "#EF5A6F",
+      });
+    }
+
+    // Check focus sessions
+    const today = new Date().toDateString();
+    const sessionsToday = focusSessions.filter(
+      s => new Date(s.completedAt).toDateString() === today
+    );
+
+    if (sessionsToday.length < 2) {
+      newNotifications.push({
+        id: "3",
+        title: "Momentum Dropping",
+        desc: "Start a 25-minute focus session to keep your streak going.",
+        icon: Timer,
+        color: "#f59e0b",
+      });
+    }
+
+    if (sessionsToday.length > 0) {
+      newNotifications.push({
+        id: "4",
+        title: "Great Focus!",
+        desc: `You've completed ${sessionsToday.length} focus session${sessionsToday.length > 1 ? "s" : ""} today. Keep it up!`,
+        icon: Sparkles,
+        color: "#22c55e",
+      });
+    }
+
+    setNotifications(newNotifications);
+  }, [tasks, activeWorkspaceId, focusSessions, overdueTaskName]);
 
   return (
     <div className="absolute right-0 top-full mt-2 w-80 bg-[#0e0e10] border border-white/[0.08] rounded-2xl shadow-2xl shadow-black/80 z-50 p-4 space-y-3 animate-fadeIn">

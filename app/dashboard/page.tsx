@@ -1,19 +1,18 @@
 "use client";
 
 import { useGeassStore } from "@/store/useGeassStore";
-import GreetingHeader    from "./components/GreetingHeader";
-import StatsRow          from "./components/StatsRow";
-import MomentumStreak    from "./components/MomentumStreak";
-import DailyTimeline     from "./components/DailyTimeline";
-import TodaysTasks       from "./components/TodaysTasks";
-import CalendarPreview   from "./components/CalendarPreview";
-import PomodoroTimer     from "./components/PomodoroTimer";
-import MusicPlayer       from "./components/MusicPlayer";
-import ProjectsOverview  from "./components/ProjectsOverview";
-import QuickNotes        from "./components/QuickNotes";
-import ActivityFeed      from "./components/ActivityFeed";
+import GreetingHeader from "./components/GreetingHeader";
+import StatsRow from "./components/StatsRow";
+import MomentumStreak from "./components/MomentumStreak";
+import DailyTimeline from "./components/DailyTimeline";
+import TodaysTasks from "./components/TodaysTasks";
+import CalendarPreview from "./components/CalendarPreview";
+import PomodoroTimer from "./components/PomodoroTimer";
+import MusicPlayer from "./components/MusicPlayer";
+import QuickNotes from "./components/QuickNotes";
+import ActivityFeed from "./components/ActivityFeed";
 import AnalyticsSnapshot from "./components/AnalyticsSnapshot";
-import BentoDragGrid     from "./components/BentoDragGrid";
+import BentoDragGrid from "./components/BentoDragGrid";
 
 // ─── Widget definitions for each sortable row ─────────────────────────────────
 
@@ -39,7 +38,7 @@ const ROW2_WIDGETS = [
   },
 ];
 
-/** Row 3 — Pomodoro, Music, Projects, Notes (4-col grid) */
+/** Row 3 — Pomodoro, Music, Notes (3-col grid) */
 const ROW3_WIDGETS = [
   {
     id: "pomodoro",
@@ -52,12 +51,6 @@ const ROW3_WIDGETS = [
     label: "Music & White Noise",
     colSpan: "col-span-1",
     component: <MusicPlayer />,
-  },
-  {
-    id: "projects",
-    label: "Projects Overview",
-    colSpan: "col-span-1",
-    component: <ProjectsOverview />,
   },
   {
     id: "notes",
@@ -92,16 +85,31 @@ function DashboardSkeleton() {
         <div className="flex-1 min-w-0 space-y-3">
           <div className="h-10 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
           <div className="grid grid-cols-4 gap-3">
-            {[1, 2, 3, 4].map(i => <div key={i} className="h-16 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />)}
+            {[1, 2, 3, 4].map((i) => (
+              <div
+                key={i}
+                className="h-16 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse"
+              />
+            ))}
           </div>
         </div>
         <div className="w-[300px] shrink-0 h-[120px] bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
       </div>
       <div className="grid grid-cols-3 gap-3 h-[320px]">
-        {[1, 2, 3].map(i => <div key={i} className="h-full bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />)}
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            className="h-full bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse"
+          />
+        ))}
       </div>
       <div className="grid grid-cols-4 gap-3">
-        {[1, 2, 3, 4].map(i => <div key={i} className="h-32 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />)}
+        {[1, 2, 3, 4].map((i) => (
+          <div
+            key={i}
+            className="h-32 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse"
+          />
+        ))}
       </div>
       <div className="grid grid-cols-12 gap-3">
         <div className="col-span-5 h-44 bg-[#0e0e10] border border-white/[0.04] rounded-2xl animate-pulse" />
@@ -119,14 +127,14 @@ export default function DashboardPage() {
   if (!isHydrated) return <DashboardSkeleton />;
 
   return (
-    <div className="p-4 space-y-3 min-h-full">
+    <div className="min-h-full space-y-3 p-3 sm:p-4">
       {/* ── Row 1: Greeting + Stats | Streak ─────── fixed, not draggable ── */}
-      <div className="flex gap-3">
-        <div className="flex-1 min-w-0 space-y-3">
+      <div className="flex flex-col gap-3 xl:flex-row">
+        <div className="min-w-0 flex-1 space-y-3">
           <GreetingHeader />
           <StatsRow />
         </div>
-        <div className="w-[300px] shrink-0">
+        <div className="w-full shrink-0 xl:w-[300px]">
           <MomentumStreak />
         </div>
       </div>
@@ -135,22 +143,22 @@ export default function DashboardPage() {
       <BentoDragGrid
         widgets={ROW2_WIDGETS}
         storageKey="geass-bento-row2"
-        gridClass="grid grid-cols-3 gap-3"
-        className="h-[320px]"
+        gridClass="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3"
+        className="min-h-[320px]"
       />
 
       {/* ── Row 3: Pomodoro | Music | Projects | Notes  ── draggable ── */}
       <BentoDragGrid
         widgets={ROW3_WIDGETS}
         storageKey="geass-bento-row3"
-        gridClass="grid grid-cols-4 gap-3"
+        gridClass="grid grid-cols-1 gap-3 md:grid-cols-2 2xl:grid-cols-4"
       />
 
       {/* ── Row 4: Activity | Analytics  ──────────── draggable ── */}
       <BentoDragGrid
         widgets={ROW4_WIDGETS}
         storageKey="geass-bento-row4"
-        gridClass="grid grid-cols-12 gap-3"
+        gridClass="grid grid-cols-1 gap-3 xl:grid-cols-12"
       />
     </div>
   );

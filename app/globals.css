@@ -6,41 +6,77 @@ body,
   min-height: 100%;
 }
 
-:root {
+/* ─── Dark theme (default) ─── */
+:root,
+html.dark {
+  color-scheme: dark;
   --background: #050505;
-  --foreground: #f8fafc;
-  --surface: #111111;
-  --surface-rgb: 17, 17, 17;
+  --background-rgb: 5, 5, 5;
+  --foreground: #f1f5f9;
+  --foreground-rgb: 241, 245, 249;
+  --surface: #0e0e10;
+  --surface-alt: #0a0a0c;
+  --surface-rgb: 14, 14, 16;
   --surface-strong: rgba(255, 255, 255, 0.08);
-  --surface-border: rgba(255, 255, 255, 0.08);
-  --text-muted: #94a3a8;
-  --text-muted-strong: #cbd5e1;
+  --surface-border: rgba(255, 255, 255, 0.06);
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
   --accent: #ef5a6f;
   --accent-rgb: 239, 90, 111;
   --accent-soft: rgba(239, 90, 111, 0.14);
   --glow: rgba(239, 90, 111, 0.12);
   --grid: rgba(255, 255, 255, 0.08);
-  --shadow: rgba(0, 0, 0, 0.35);
+  --shadow: rgba(0, 0, 0, 0.45);
+  --input-bg: rgba(255, 255, 255, 0.03);
+  --input-border: rgba(255, 255, 255, 0.08);
+  --input-text: #f1f5f9;
+  --input-placeholder: #4b5563;
+  --card-bg: #0e0e10;
+  --card-border: rgba(255, 255, 255, 0.06);
+  --sidebar-bg: #0a0a0c;
+  --topbar-bg: #0a0a0c;
+  --topbar-border: rgba(255, 255, 255, 0.05);
+  --prompt-bg: #111113;
+  --select-bg: #111113;
+  --select-border: rgba(255, 255, 255, 0.1);
+  --select-text: #f1f5f9;
 }
 
+/* ─── Light theme ─── */
 html.light {
-  color-scheme: dark;
-  --background: #222225;
-  --background-rgb: 34, 34, 37;
-  --foreground: #f8fafc;
-  --foreground-rgb: 248, 250, 252;
-  --surface: #2d2d32;
-  --surface-rgb: 45, 45, 50;
-  --surface-strong: rgba(255, 255, 255, 0.06);
-  --surface-border: rgba(255, 255, 255, 0.08);
+  color-scheme: light;
+  --background: #f4f4f7;
+  --background-rgb: 244, 244, 247;
+  --foreground: #0f172a;
+  --foreground-rgb: 15, 23, 42;
+  --surface: #ffffff;
+  --surface-alt: #f8f8fb;
+  --surface-rgb: 255, 255, 255;
+  --surface-strong: rgba(0, 0, 0, 0.05);
+  --surface-border: rgba(0, 0, 0, 0.08);
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
   --text-muted: #94a3b8;
-  --text-muted-strong: #cbd5e1;
   --accent: #ef5a6f;
   --accent-rgb: 239, 90, 111;
-  --accent-soft: rgba(239, 90, 111, 0.14);
-  --glow: rgba(239, 90, 111, 0.12);
-  --grid: rgba(255, 255, 255, 0.06);
-  --shadow: rgba(0, 0, 0, 0.4);
+  --accent-soft: rgba(239, 90, 111, 0.12);
+  --glow: rgba(239, 90, 111, 0.08);
+  --grid: rgba(0, 0, 0, 0.05);
+  --shadow: rgba(0, 0, 0, 0.1);
+  --input-bg: #ffffff;
+  --input-border: #e2e8f0;
+  --input-text: #0f172a;
+  --input-placeholder: #94a3b8;
+  --card-bg: #ffffff;
+  --card-border: #e8e8ee;
+  --sidebar-bg: #ffffff;
+  --topbar-bg: #ffffff;
+  --topbar-border: #e8e8ee;
+  --prompt-bg: #ffffff;
+  --select-bg: #ffffff;
+  --select-border: #e2e8f0;
+  --select-text: #0f172a;
 }
 
 @theme inline {
@@ -48,6 +84,10 @@ html.light {
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
@@ -61,6 +101,7 @@ body {
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
+  overflow-x: hidden;
 }
 
 ::selection {
@@ -68,7 +109,295 @@ body {
   color: var(--foreground);
 }
 
+.geass-card {
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: 1.25rem;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+}
+
+.geass-card-soft {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.125rem;
+}
+
+.geass-surface {
+  background: var(--surface);
+  border: 1px solid var(--card-border);
+  border-radius: 1.25rem;
+}
+
+@media (max-width: 1023px) {
+  .dashboard-shell {
+    padding-inline: 0.5rem;
+  }
+}
+
+/* ─── View Transitions API — AnimatedThemeToggler ─── */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+html[data-magicui-theme-vt="active"]::view-transition-group(root) {
+  animation-duration: var(--magicui-theme-toggle-vt-duration);
+}
+
 @tailwind utilities;
+
+/* ================================================= */
+/* LIGHT THEME OVERRIDES                             */
+/* Override hardcoded dark Tailwind classes with CSS  */
+/* vars so components respond to theme without edits */
+/* ================================================= */
+
+/* Page & layout backgrounds */
+html.light body,
+html.light .bg-\[\#030303\],
+html.light .bg-\[\#050505\] {
+  background-color: var(--background) !important;
+}
+
+html.light .bg-\[\#0a0a0c\],
+html.light .bg-\[\#0e0e10\],
+html.light .bg-\[\#111113\],
+html.light .bg-\[\#111111\] {
+  background-color: var(--surface) !important;
+}
+
+/* Sidebar & topbar */
+html.light [class*="border-white/\[0.05\]"] {
+  border-color: var(--topbar-border) !important;
+}
+html.light [class*="border-white/\[0.06\]"] {
+  border-color: var(--card-border) !important;
+}
+html.light [class*="border-white/\[0.08\]"] {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+html.light [class*="border-white/\[0.09\]"] {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+html.light [class*="border-white/10"] {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+html.light [class*="border-white/\[0.04\]"] {
+  border-color: rgba(0, 0, 0, 0.06) !important;
+}
+html.light [class*="border-white/\[0.07\]"] {
+  border-color: rgba(0, 0, 0, 0.09) !important;
+}
+
+/* Text colours */
+html.light .text-white {
+  color: var(--text-primary) !important;
+}
+html.light .text-neutral-200 {
+  color: #334155 !important;
+}
+html.light .text-neutral-300 {
+  color: #475569 !important;
+}
+html.light .text-neutral-400 {
+  color: #64748b !important;
+}
+html.light .text-neutral-500 {
+  color: #94a3b8 !important;
+}
+html.light .text-neutral-600 {
+  color: #94a3b8 !important;
+}
+html.light .text-neutral-700 {
+  color: #cbd5e1 !important;
+}
+
+/* Hover text */
+html.light .hover\:text-white:hover {
+  color: var(--text-primary) !important;
+}
+html.light .hover\:text-neutral-200:hover {
+  color: #1e293b !important;
+}
+html.light .hover\:text-neutral-300:hover {
+  color: #334155 !important;
+}
+
+/* Card / surface backgrounds */
+html.light .bg-white\/\[0\.02\],
+html.light .bg-white\/\[0\.03\],
+html.light .bg-white\/\[0\.04\],
+html.light .bg-white\/\[0\.05\],
+html.light .bg-white\/\[0\.06\],
+html.light .bg-white\/\[0\.08\] {
+  background-color: rgba(0, 0, 0, 0.04) !important;
+}
+
+html.light .hover\:bg-white\/\[0\.02\]:hover,
+html.light .hover\:bg-white\/\[0\.03\]:hover,
+html.light .hover\:bg-white\/\[0\.04\]:hover,
+html.light .hover\:bg-white\/\[0\.05\]:hover,
+html.light .hover\:bg-white\/\[0\.06\]:hover,
+html.light .hover\:bg-white\/\[0\.08\]:hover,
+html.light .hover\:bg-white\/10:hover {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+}
+
+/* Input / form fields */
+html.light input:not([type="color"]):not([type="range"]):not([type="checkbox"]),
+html.light textarea,
+html.light select {
+  background-color: var(--input-bg) !important;
+  border-color: var(--input-border) !important;
+  color: var(--input-text) !important;
+}
+
+html.light input::placeholder,
+html.light textarea::placeholder {
+  color: var(--input-placeholder) !important;
+}
+
+/* Dropdown menus / popovers */
+html.light [class*="bg-\[\#111113\]"],
+html.light [class*="bg-\[\#18181a\]"] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+}
+
+/* Scrollbars */
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+html.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+html.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Focus rings */
+html.light *:focus-visible {
+  outline-color: var(--accent);
+}
+
+/* Kbd badges */
+html.light kbd {
+  background: rgba(0, 0, 0, 0.05) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+  color: #64748b !important;
+}
+
+/* Navbar — light theme */
+html.light nav[class*="bg-black"] {
+  background-color: rgba(255, 255, 255, 0.92) !important;
+  border-color: var(--card-border) !important;
+  box-shadow: 0 15px 60px rgba(0, 0, 0, 0.08) !important;
+}
+
+html.light .navbar-shine {
+  opacity: 0.35;
+}
+
+html.light .logo-text {
+  background: linear-gradient(90deg, #0f172a, #ef5a6f, #0f172a);
+  background-size: 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+html.light .hero-grid {
+  opacity: 0.25;
+}
+
+html.light .hero-glow::after {
+  background: radial-gradient(
+    circle,
+    transparent 45%,
+    rgba(0, 0, 0, 0.08) 72%,
+    rgba(0, 0, 0, 0.2) 100%
+  );
+}
+
+html.light .btn-secondary {
+  border-color: var(--input-border);
+  background: var(--surface);
+  color: var(--text-secondary);
+}
+
+html.light .btn-secondary:hover {
+  border-color: rgba(239, 90, 111, 0.5);
+  background: var(--surface-strong);
+  color: var(--text-primary);
+}
+
+html.light .glass,
+html.light .glass-panel,
+html.light .section-card,
+html.light .feature-card {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: var(--card-border);
+}
+
+/* =================================================================== */
+/* CUSTOM INPUT & SELECT STYLES (theme-aware, replaces browser defaults) */
+/* =================================================================== */
+
+/* Styled select — override native dropdown in the entire app */
+select.themed-select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-color: var(--select-bg);
+  border: 1px solid var(--select-border);
+  color: var(--select-text);
+  border-radius: 0.75rem;
+  padding: 0.375rem 2rem 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color 200ms,
+    box-shadow 200ms;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.6rem center;
+}
+
+select.themed-select:focus {
+  border-color: rgba(239, 90, 111, 0.5);
+  box-shadow: 0 0 0 3px rgba(239, 90, 111, 0.1);
+}
+
+/* Styled text inputs — theme-aware */
+input.themed-input,
+textarea.themed-input {
+  background-color: var(--input-bg);
+  border: 1px solid var(--input-border);
+  color: var(--input-text);
+  border-radius: 0.75rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  outline: none;
+  transition:
+    border-color 200ms,
+    box-shadow 200ms,
+    background-color 200ms;
+  width: 100%;
+}
+
+input.themed-input::placeholder,
+textarea.themed-input::placeholder {
+  color: var(--input-placeholder);
+}
+
+input.themed-input:focus,
+textarea.themed-input:focus {
+  border-color: rgba(239, 90, 111, 0.5);
+  box-shadow: 0 0 0 3px rgba(239, 90, 111, 0.1);
+  background-color: var(--input-bg);
+}
 
 /* ================================================= */
 /* GEASS HERO BACKGROUND */
@@ -399,8 +728,12 @@ html {
 /* ================================================= */
 
 @keyframes shimmer {
-  0%   { transform: translateX(-100%); }
-  100% { transform: translateX(200%); }
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
 }
 
 /* ================================================= */
@@ -453,7 +786,7 @@ html {
 
 .glass-panel-hover:hover {
   border-color: rgba(239, 90, 111, 0.3);
-  box-shadow: 
+  box-shadow:
     0 12px 40px 0 rgba(0, 0, 0, 0.5),
     0 0 20px 0 rgba(239, 90, 111, 0.1);
   background: rgba(255, 255, 255, 0.03);
@@ -469,15 +802,25 @@ html {
   inset: 0;
   border-radius: inherit;
   padding: 1px;
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02));
-  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.12),
+    rgba(255, 255, 255, 0.02)
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
 }
 
 .glow-card-border-hover:hover::before {
-  background: linear-gradient(to bottom, rgba(239, 90, 111, 0.5), rgba(239, 90, 111, 0.1));
+  background: linear-gradient(
+    to bottom,
+    rgba(239, 90, 111, 0.5),
+    rgba(239, 90, 111, 0.1)
+  );
 }
 
 .text-gradient-red {
@@ -576,7 +919,8 @@ html {
 }
 
 @keyframes glowBreathe {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.8;
     transform: scale(1) translate3d(0, 0, 0);
   }
@@ -1002,7 +1346,7 @@ nav:hover {
 
 .card-dark-glow-hover:hover {
   border-color: rgba(239, 90, 111, 0.2);
-  box-shadow: 
+  box-shadow:
     0 12px 30px rgba(0, 0, 0, 0.5),
     0 0 20px rgba(239, 90, 111, 0.08);
   transform: translateY(-2px);
@@ -1019,4 +1363,3 @@ nav:hover {
 .animate-marquee {
   animation: marqueeScroll 32s linear infinite;
 }
-

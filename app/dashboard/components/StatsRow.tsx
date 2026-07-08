@@ -20,7 +20,7 @@ const Sparkline = ({ data, color }: { data: number[]; color: string }) => {
 };
 
 export default function StatsRow() {
-  const { activeWorkspaceId, tasks, projects, focusSessions } = useGeassStore();
+  const { activeWorkspaceId, tasks, focusSessions } = useGeassStore();
 
   const workspaceTasks = tasks.filter(t => t.workspaceId === activeWorkspaceId);
   const todayStr = new Date().toISOString().split("T")[0];
@@ -39,11 +39,8 @@ export default function StatsRow() {
   const mins = focusMinutes % 60;
   const focusTimeStr = hrs > 0 ? `${hrs}h ${mins}m` : `${mins}m`;
 
-  // Active Projects Progress (average)
-  const activeProjects = projects.filter(p => p.workspaceId === activeWorkspaceId && p.status === "active");
-  const averageProgress = activeProjects.length > 0
-    ? Math.round(activeProjects.reduce((acc, curr) => acc + (curr.progress || 0), 0) / activeProjects.length)
-    : 0;
+  // Total Notes (for 4th stat
+  const totalTasks = workspaceTasks.length;
 
   // Productivity Score (0-100) based on task completion ratio + focus target
   const taskRatio = totalTodayCount > 0 ? completedTodayCount / totalTodayCount : 0.5;
@@ -67,9 +64,9 @@ export default function StatsRow() {
       color: "#EF5A6F", data: [55, 60, 70, 75, 68, productivityScore || 50, productivityScore],
     },
     {
-      icon: Layers, label: "Project Progress",
-      value: `${averageProgress}%`, sub: "average", trend: "+5% from last week", up: true,
-      color: "#f59e0b", data: [35, 40, 45, 50, 55, averageProgress || 10, averageProgress],
+      icon: Layers, label: "Total Tasks",
+      value: String(totalTasks), sub: "in workspace", trend: "+3% from last week", up: true,
+      color: "#f59e0b", data: [35, 40, 45, 50, 55, totalTasks || 10, totalTasks],
     },
   ];
 
