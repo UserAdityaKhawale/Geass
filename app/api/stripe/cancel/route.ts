@@ -40,7 +40,7 @@ export async function POST() {
       { 
         subscriptionTier: "free",
         cancelAtPeriodEnd: true,
-        subscriptionEndsAt: new Date(subscription.current_period_end * 1000).toISOString()
+        subscriptionEndsAt: new Date((subscription.items.data[0]?.current_period_end || Math.floor(Date.now() / 1000)) * 1000).toISOString()
       }
     );
 
