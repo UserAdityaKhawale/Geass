@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
 
     // Count current workspaces
     const workspaceCount = await Workspace.countDocuments({ userId });
-    const limit = userSettings.subscriptionTier === "free" ? 4 : 10;
+    const limit = userSettings.subscriptionTier === "free" ? 20 : 100;
 
     if (workspaceCount >= limit) {
       return NextResponse.json(
